@@ -1,0 +1,27 @@
+The Wisdom Exchange Mark II
+===========================
+
+The problem with the [Mark I Wisdom Exchange](https://github.com/tangentmonger/wisdomexchange) was that sometimes someone would put a lot of thought into their contribution, write something personal and meaningful, and receive a blank page or a crappy doodle. The Mark II aims to provide a better exchange experience.
+
+In this version, the machine will scan new wisdom as it's pulled into the machine, and analyse it for "wisdom content". Then it can select and provide a matching piece of wisdom to print. 
+
+If it were possible, I would love to be able to run the wisdom through text recognition, figure out the topic and offer a related piece of wisdom. However, current text recognition libraries only work on printed text, not wildly different handwriting that even humans struggle to read sometimes. (If you know differently, please get in touch!) So instead, I want this machine to offer wisdom of a similar level of effort. If you wrote six lines, you get a different six-line wisdom back. Write one line, get one line. Draw a doodle, get a doodle. (Write nothing, receive mockery.)
+
+Complications: people write in different styles, at different angles, mix text and images, go off the edge of the page, use different pens...
+
+Analysis
+--------
+
+Step 1: prepare the image for analysis. Convert it to a smaller, inverted, B&W image, with extra padding.
+
+Step 2: level it. The approach here is to stretch out each pixel horizontally and record the resulting area, then rotate the image a few degrees and try again, and so on. When the lines of text are level, the area is smallest. This approach correctly levels about 95% of textual wisdom. It fails on images (which is fine), and on text where the lines are closer together than the letters. It is slower than I would like because image rotation is costly. Levelled wisdom is sometimes upside down because this algorithm has no way to distinguish text orientation, but for my purposes that's ok.
+
+![Original wisdom](https://raw.githubusercontent.com/tangentmonger/wisdomexchange/master/levelling-before.jpeg "Original wisdom")
+
+![Levelling in action](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/master/levelling.gif "Levelling in action")
+
+![Levelled wisdom](https://raw.githubusercontent.com/tangentmonger/wisdomexchange/master/levelling-after.png "Levelled wisdom")
+
+Step 3: count the number of lines. Summing the amount of ink on each line produces a characteristic peak for each line. Identifying these peaks is in progress. 
+
+
