@@ -18,7 +18,4 @@ before_script:
     - make
     - sudo make install
     - cd ../..
-    - ls /usr/local
-    - ls /usr/local/lib
-    - export
     - export PYTHONPATH=/usr/local/lib/python2.7/site-packages:$PYTHONPATH
