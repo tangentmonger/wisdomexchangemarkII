@@ -12,15 +12,13 @@ Complications: people write in different styles, at different angles, mix text a
 Analysis
 --------
 
+![Original wisdom](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/master/levelling-before.jpeg)
+
 Step 1: prepare the image for analysis. Convert it to a smaller, inverted, B&W image, with extra padding.
 
 Step 2: level it. The approach here is to stretch out each pixel horizontally and record the resulting area, then rotate the image a few degrees and try again, and so on. When the lines of text are level, the area is smallest. This approach correctly levels about 95% of textual wisdom. It fails on images (which is fine), and on text where the lines are closer together than the letters. It is slower than I would like because image rotation is costly. Levelled wisdom is sometimes upside down because this algorithm has no way to distinguish text orientation, but for my purposes that's ok.
 
-![Original wisdom](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/master/levelling-before.jpeg)
-
 ![Levelling in action](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/master/levelling.gif "Levelling in action")
-
-![Levelled wisdom](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/master/levelling-after.png)
 
 Step 3: count the number of lines. Summing the amount of ink on each line produces a characteristic peak for each line. Identifying these peaks is in progress. 
 
