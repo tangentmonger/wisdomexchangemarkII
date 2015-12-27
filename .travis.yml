@@ -4,6 +4,9 @@ python:
 script: nosetests
 
 # Needs openCV, but it's not available via pip, so...
+sudo: true
+before_install:
+    - sudo apt-get update
 install:
     - sudo apt-get install python-dev python-numpy
 before_script:
