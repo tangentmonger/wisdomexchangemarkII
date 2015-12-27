@@ -37,6 +37,7 @@ class TestWisdom(unittest.TestCase):
                     successes += 1
                 else:
                     print "Failed to level wisdom %s (expected %d, actual %d, diff %d, image: %s, blank: %s" % (filepath, expected_angle, actual_angle, difference, answer.image, answer.blank)
+                    #cv2.imwrite("failures/%s" % wisdom.filename, wisdom.prepared_rotated)
 
         print "Levelled %d out of %d textual wisdom" % (successes, texts)
         self.assertGreaterEqual(int(float(successes)/texts * 100), 94) # 94% success rate is the best so far
