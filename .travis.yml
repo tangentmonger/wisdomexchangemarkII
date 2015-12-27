@@ -3,7 +3,7 @@ python:
     - "2.7"
 script: nosetests
 
-# Needs openCV, but it's not available via pip, so...
+# Needs openCV v2, but it's not available via pip, so...
 sudo: true
 before_install:
     - sudo apt-get update
@@ -12,6 +12,7 @@ install:
 before_script:
     - git clone https://github.com/Itseez/opencv.git
     - cd opencv
+    - git checkout 2.4 
     - mkdir build
     - cd build
     - cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local ..
