@@ -2,3 +2,16 @@ language: python
 python:
     - "2.7"
 script: nosetests
+
+# Needs openCV, but it's not available via pip, so...
+install:
+    - sudo apt-get install python-dev python-numpy
+before_script:
+    - git clone https://github.com/Itseez/opencv.git
+    - cd opencv
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make
+    - sudo make install
+    - cd ../..
