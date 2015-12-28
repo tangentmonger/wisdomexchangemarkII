@@ -111,7 +111,7 @@ class Wisdom():
             while sample_distance > self._angle_resolution:
                 for angle in xrange(search_start, search_end, sample_distance):
                     if angle not in ink_areas:
-                        ink_areas[angle] = self.get_area_for_levelling(angle % 180)
+                        ink_areas[angle] = self._get_area_for_levelling(angle % 180)
 
                 best_angle = min(ink_areas.items(), key=lambda x: x[1])
 
@@ -123,9 +123,10 @@ class Wisdom():
             self._best_angle = best_angle[0]
         return self._best_angle
 
-    
-
-    def get_area_for_levelling(self, angle):
+    def _get_area_for_levelling(self, angle):
+        """
+        Calculate the horizontal spread area at the given angle.
+        """
         image = self._rotate(angle)
         # rotation loses some ink brightness, re-threshold
         threshold = 20 # if a pixel is above this...
