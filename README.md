@@ -25,6 +25,6 @@ Step 3: count the number of lines. Summing the amount of ink on each line produc
 Build
 -----
 
-Travis CI status: [![Travis CI status](https://travis-ci.org/tangentmonger/wisdomexchangemarkII.svg?branch=master)](https://travis-ci.org/tangentmonger/wisdomexchangemarkII))
+Travis CI status: [![Travis CI status](https://travis-ci.org/tangentmonger/wisdomexchangemarkII.svg?branch=master)](https://travis-ci.org/tangentmonger/wisdomexchangemarkII)
 
 Requires OpenCV v2.4, which is a bit of a faff to install. See [.travis.yml](https://github.com/tangentmonger/wisdomexchangemarkII/blob/master/.travis.yml) for one way of doing it.
