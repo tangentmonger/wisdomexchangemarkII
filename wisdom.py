@@ -21,7 +21,7 @@ class Wisdom():
         # tuning
         self._angle_resolution = 5
         # levelling_width chosen by trial and error over sample wisdom, gets 94%
-        self._levelling_width = 85 
+        self._levelling_width = 85
 
     @property
     def filename(self):
@@ -35,7 +35,7 @@ class Wisdom():
         """
         The original wisdom image.
         """
-        if self._original == None:
+        if self._original is None:
             self._original = cv2.imread(self.filepath)
         return self._original
 
@@ -45,7 +45,7 @@ class Wisdom():
         Original image greyscaled, shrunk, inverted and thresholded.
         Result: a white-on-black version ready for further processing.
         """
-        if self._prepared == None:
+        if self._prepared is None:
             image = self.original
             # change to greyscale
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -101,40 +101,54 @@ class Wisdom():
         """
         The angle at which this wisdom looks most level.
         """
-        if self._best_angle == None:
+        if self._best_angle is None:
+            ink_areas = {}
+            search_start = 0
+            search_end = 180
+            sample_distance = 30 # searches
             best_angle = 0
-            smallest_ink_area = None
-           
-            # only 180 degrees needed, results will repeat after that 
-            for angle in xrange(0, 180, self._angle_resolution):
-                image = self._rotate(angle)
-                # rotation loses some ink brightness, re-threshold
-                threshold = 20 # if a pixel is above this...
-                output_value = 255 # output white (otherwise black)
-                _, image = cv2.threshold(image,
-                                         threshold,
-                                         output_value,
-                                         cv2.THRESH_BINARY)
 
-                # blur letters together
-                element = cv2.getStructuringElement(cv2.MORPH_RECT,
-                                                    (self._levelling_width,1))
-                image = cv2.dilate(image, element)
+            while sample_distance > self._angle_resolution:
+                for angle in xrange(search_start, search_end, sample_distance):
+                    if angle not in ink_areas:
+                        ink_areas[angle] = self._get_area_for_levelling(angle % 180)
 
-                ink_area = sum([sum(row) / 255 for row in image])
-                if not smallest_ink_area or ink_area < smallest_ink_area:
-                    smallest_ink_area = ink_area
-                    best_angle = angle
+                best_angle = min(ink_areas.items(), key=lambda x: x[1])
 
-            self._best_angle = best_angle
+                new_search_space = (search_end - search_start) / 2
+                search_start = best_angle[0] - (new_search_space / 2)
+                search_end = best_angle[0] + (new_search_space / 2)
+                sample_distance = sample_distance / 2
+
+            self._best_angle = best_angle[0]
         return self._best_angle
+
+    def _get_area_for_levelling(self, angle):
+        """
+        Calculate the horizontal spread area at the given angle.
+        """
+        image = self._rotate(angle)
+        # rotation loses some ink brightness, re-threshold
+        threshold = 20 # if a pixel is above this...
+        output_value = 255 # output white (otherwise black)
+        _, image = cv2.threshold(image,
+                                 threshold,
+                                 output_value,
+                                 cv2.THRESH_BINARY)
+
+        # blur letters together
+        element = cv2.getStructuringElement(cv2.MORPH_RECT,
+                                            (self._levelling_width,1))
+        image = cv2.dilate(image, element)
+
+        return sum([sum(row) / 255 for row in image])
 
     @property
     def prepared_rotated(self):
         """
         Return the prepared image, rotated to the best angle
         """
-        if self._prepared_rotated == None:
+        if self._prepared_rotated is None:
             self._prepared_rotated = self._rotate(self.best_angle)
         return self._prepared_rotated
    
