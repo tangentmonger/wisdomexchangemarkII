@@ -57,16 +57,29 @@ class TestWisdom(unittest.TestCase):
         Check that line detection works with reasonable accuracy.
         """
         successes = 0
+        near = 0
+        tested =0
+        import glob, os
+
+        filelist = glob.glob("failures/*.jpeg")
+        for f in filelist:
+            os.remove(f)
+
         for wisdom in self.sample_wisdom:
+            tested +=1
             answer = expected[wisdom.filename]
-            print "Testing %s" % wisdom.filename
+            #print "Testing %s" % wisdom.filename
             if wisdom.lines == answer.lines:
                 successes += 1
+                print "%s: PASS\t%f%%" % (wisdom.filename, float(successes)/tested*100)
+            #elif answer.lines > 0 and abs(answer.lines - wisdom.lines) == 1:
+            #    near += 1
             else:
-                print "Failed to detect lines in %s (expected %d, actual %d)" % (wisdom.filename, answer.lines, wisdom.lines)
+                print "%s: FAIL\t%f%%\t(expected %d, actual %d)" % (wisdom.filename, float(successes)/tested*100, answer.lines, wisdom.lines )
                 cv2.imwrite("failures/%s" % wisdom.filename, wisdom.prepared_rotated)
         print "Detected lines in %d out of %d textual wisdom" % (successes, len(self.sample_wisdom))
-        self.assertGreaterEqual(int(float(successes)/len(self.sample_wisdom) * 100), 94) 
+        #print "Nearly detected lines in %d out of %d textual wisdom" % (near, len(self.sample_wisdom))
+        self.assertGreaterEqual(int(float(successes+near)/len(self.sample_wisdom) * 100), 94) 
 
 
 if __name__ == '__main__':
