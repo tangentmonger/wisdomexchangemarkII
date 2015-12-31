@@ -6,6 +6,16 @@ import math
 import cv2
 import os
 
+# Tuning ================
+# Angle resolution: smallest angle used in levelling
+ANGLE_RESOLUTION = 5
+# Levelling width: distance to stretch pixels during levelling.
+# Chosen by trial and error over sample wisdom, gets 94%
+LEVELLING_WIDTH = 85
+# Miminum ink: below this number of pixels, image is considered blank
+MIMINUM_INK = 100
+
+
 class Wisdom():
     """
     Represents one item of wisdom and its analysis.
@@ -18,10 +28,6 @@ class Wisdom():
         self._prepared_rotated = None
         self._best_angle = None
 
-        # tuning
-        self._angle_resolution = 5
-        # levelling_width chosen by trial and error over sample wisdom, gets 94%
-        self._levelling_width = 85
 
     @property
     def filename(self):
@@ -108,10 +114,11 @@ class Wisdom():
             sample_distance = 30 # searches
             best_angle = 0
 
-            while sample_distance > self._angle_resolution:
+            while sample_distance > ANGLE_RESOLUTION:
                 for angle in xrange(search_start, search_end, sample_distance):
                     if angle not in ink_areas:
-                        ink_areas[angle] = self._get_area_for_levelling(angle % 180)
+                        ink_area = self._get_area_for_levelling(angle % 180)
+                        ink_areas[angle] = ink_area
 
                 best_angle = min(ink_areas.items(), key=lambda x: x[1])
 
@@ -138,7 +145,7 @@ class Wisdom():
 
         # blur letters together
         element = cv2.getStructuringElement(cv2.MORPH_RECT,
-                                            (self._levelling_width,1))
+                                            (LEVELLING_WIDTH,1))
         image = cv2.dilate(image, element)
 
         return sum([sum(row) / 255 for row in image])
@@ -152,4 +159,11 @@ class Wisdom():
             self._prepared_rotated = self._rotate(self.best_angle)
         return self._prepared_rotated
    
-
+    @property
+    def blank(self):
+        """
+        Return True if this wisdom is blank
+        """
+        image = self.prepared
+        ink = sum([sum(row) / 255 for row in image])
+        return ink <= MIMINUM_INK
