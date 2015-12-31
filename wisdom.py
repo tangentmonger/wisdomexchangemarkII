@@ -167,3 +167,10 @@ class Wisdom():
         image = self.prepared
         ink = sum([sum(row) / 255 for row in image])
         return ink <= MIMINUM_INK
+
+    @property
+    def image(self):
+        """
+        Return True is this wisdom contains an image
+        """
+        return False

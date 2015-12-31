@@ -61,6 +61,24 @@ class TestWisdom(unittest.TestCase):
         print "Blank detection in %d out of %d wisdom" % (successes, len(filepaths))
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
 
+    def test_detect_images(self):
+        """
+        Check that image wisdom is detected with reasonable accuracy.
+        """
+        successes = 0
+        pattern = os.path.join(TEST_DATA, "*.jpeg")
+        filepaths = sorted(glob.glob(pattern))
+        for filepath in filepaths:
+            wisdom = Wisdom(filepath)
+            answer = expected[wisdom.filename]
+            if wisdom.image == answer.image:
+                print "%s:\tPASS" % wisdom.filename
+                successes += 1
+            else:
+                print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.blank)
+        print "Image detection in %d out of %d wisdom" % (successes, len(filepaths))
+        self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
+
 
 if __name__ == '__main__':
     unittest.main()
