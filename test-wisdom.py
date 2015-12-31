@@ -52,9 +52,11 @@ class TestWisdom(unittest.TestCase):
         for filepath in filepaths:
             wisdom = Wisdom(filepath)
             answer = expected[wisdom.filename]
-            print "Testing %s" % wisdom.filename
             if wisdom.blank == answer.blank:
+                print "%s:\tPASS" % wisdom.filename
                 successes += 1
+            else:
+                print "%s:\tFAIL (expected %s)" % (wisdom.filename, answer.blank)
         print "Blank detection in %d out of %d wisdom" % (successes, len(filepaths))
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
 

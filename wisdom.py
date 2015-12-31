@@ -22,6 +22,7 @@ class Wisdom():
         self._angle_resolution = 5
         # levelling_width chosen by trial and error over sample wisdom, gets 94%
         self._levelling_width = 85
+        self._minimum_ink = 100 # when is image considered blank
 
     @property
     def filename(self):
@@ -154,4 +155,9 @@ class Wisdom():
    
     @property
     def blank(self):
-        return False
+        """
+        Return True if this wisdom is blank
+        """
+        image = self.prepared
+        ink = sum([sum(row) / 255 for row in image])
+        return ink <= self._minimum_ink
