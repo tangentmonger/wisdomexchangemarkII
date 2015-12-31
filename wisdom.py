@@ -152,4 +152,6 @@ class Wisdom():
             self._prepared_rotated = self._rotate(self.best_angle)
         return self._prepared_rotated
    
-
+    @property
+    def blank(self):
+        return False

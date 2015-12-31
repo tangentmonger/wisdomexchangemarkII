@@ -42,5 +42,22 @@ class TestWisdom(unittest.TestCase):
         print "Levelled %d out of %d textual wisdom" % (successes, texts)
         self.assertGreaterEqual(int(float(successes)/texts * 100), 94) # 94% success rate is the best so far
 
+    def test_detect_blanks(self):
+        """
+        Check that blank wisdom is detected.
+        """
+        successes = 0
+        pattern = os.path.join(TEST_DATA, "*.jpeg")
+        filepaths = sorted(glob.glob(pattern))
+        for filepath in filepaths:
+            wisdom = Wisdom(filepath)
+            answer = expected[wisdom.filename]
+            print "Testing %s" % wisdom.filename
+            if wisdom.blank == answer.blank:
+                successes += 1
+        print "Blank detection in %d out of %d wisdom" % (successes, len(wisdom))
+        self.assertGreaterEqual(int(float(successes)/len(wisdom) * 100), 94) # 94% success rate is the best so far
+
+
 if __name__ == '__main__':
     unittest.main()
