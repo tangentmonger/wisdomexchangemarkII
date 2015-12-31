@@ -55,8 +55,8 @@ class TestWisdom(unittest.TestCase):
             print "Testing %s" % wisdom.filename
             if wisdom.blank == answer.blank:
                 successes += 1
-        print "Blank detection in %d out of %d wisdom" % (successes, len(wisdom))
-        self.assertGreaterEqual(int(float(successes)/len(wisdom) * 100), 94) # 94% success rate is the best so far
+        print "Blank detection in %d out of %d wisdom" % (successes, len(filepaths))
+        self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
 
 
 if __name__ == '__main__':
