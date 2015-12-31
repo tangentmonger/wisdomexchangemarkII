@@ -5,6 +5,7 @@ Represents one item of wisdom and its analysis.
 import math
 import cv2
 import os
+import numpy
 
 # Tuning ================
 # Angle resolution: smallest angle used in levelling
@@ -27,6 +28,8 @@ class Wisdom():
         self._prepared = None
         self._prepared_rotated = None
         self._best_angle = None
+        self._blank = None
+        self._image = None
 
 
     @property
@@ -164,13 +167,37 @@ class Wisdom():
         """
         Return True if this wisdom is blank
         """
-        image = self.prepared
-        ink = sum([sum(row) / 255 for row in image])
-        return ink <= MIMINUM_INK
+        if self._blank == None:
+            image = self.prepared
+            ink = sum([sum(row) / 255 for row in image])
+            self._blank = (ink <= MIMINUM_INK)
+        return self._blank
 
     @property
     def image(self):
         """
-        Return True is this wisdom contains an image
+        Return True if this wisdom contains an image
         """
-        return False
+        if self._image == None:
+            if self.blank:
+                self._image = False
+            else:
+                image = self.prepared_rotated
+                #rows, columns = image.shape[:2]
+                #h_ink = numpy.matrix([sum(row) / 255 for row in image])
+                #v_ink = numpy.matrix([sum(column) / 255 for column in zip(*image)]).T #aw yiss
+
+                #print h_ink.shape
+                #print v_ink.shape
+
+                #image = numpy.dot(v_ink[:,None], h_ink[None,:]).T
+                #image = cv2.blur(image, (5,5))
+                #
+                h_ink = [sum(row) / 255 for row in image]
+
+                #for line, amount in enumerate(h_ink):
+                #    cv2.line(image, (0, line), (amount, line), 127)
+
+                cv2.imwrite("failures/%s" % self.filename, image)
+            
+        return self._image
