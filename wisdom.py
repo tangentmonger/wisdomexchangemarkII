@@ -8,6 +8,7 @@ import os
 from scipy import optimize
 #from numpy import *
 import numpy
+import re
 
 class Wisdom():
     """
@@ -209,7 +210,7 @@ class Wisdom():
             data = smoothed[start:end]
 
             d_data = [data[x+1] - data[x] for x in xrange(0, len(data)-1)]
-            print [d_data[x+1] - d_data[x] for x in xrange(0, len(d_data)-1)]
+            #print [d_data[x+1] - d_data[x] for x in xrange(0, len(d_data)-1)]
             #5, 0 -> 52
             #5, 1 -> 64
             #5, 2 -> 60 
@@ -219,24 +220,60 @@ class Wisdom():
             smoothing = 1
             #smoothed_d_data = d_data
             smoothed_d_data =  [sum(d_data[index - smoothing: index+smoothing]) / (smoothing*2) for index in xrange(smoothing, len(d_data) - smoothing)] + [0]*smoothing
-            smoothed_d_data = filter(lambda x: x != 0, smoothed_d_data)
+            #smoothed_d_data = filter(lambda x: x != 0, smoothed_d_data)
 
+
+            text = "".join(["U" if amount>0 else "D" if amount<0 else "0" for amount in smoothed_d_data])
+
+            #print text
             for row, amount in enumerate(smoothed_d_data):
                 #cv2.line(image, (0,start+row), (20+(int(amount) * 5), start +row), 255 if amount>0 else 160, 1)
                 cv2.line(image, (0,start+row), (20, start +row), 255 if amount>0 else 160 if amount<0 else 0, 1)
 
             #print smoothed_d_data
             #print len(filter(lambda x:x>0, smoothed_d_data)) - len(filter(lambda x:x<0, smoothed_d_data))
-    
-            crossings = 0
-            for x in xrange(0, len(smoothed_d_data) - 1):
-                if smoothed_d_data[x] > 0 and smoothed_d_data[x+1] < 0:
-                    crossings += 1
+            #max_infill = 3
+            n = 5
 
-            self._lines = crossings
-
-            if sum(horizontal_ink) < 100:
+            matches = re.findall("U+0*D+", text)
+            #matches = re.findall("U*0{,3}U+0*D+0{,3}D*", text)
+            if not matches:
                 self._lines = 0
+            else:
+                #print "\n".join(matches)
+                # remove matches that are too short to be lines)
+                #matches = filter(lambda x: len(x) > 10, matches)
+                # remove matches with more 0 than U or D
+                #matches = filter(lambda x: x.count("U") >= x.count("0"), matches)
+                #matches = filter(lambda x: x.count("D") >= x.count("0"), matches)
+                #66% - 20 - 14
+                #more 0 than U and D combined
+                #65 - 22 - 13
+                #matches = filter(lambda x: x.count("D") + x.count("U") >= x.count("0"), matches)
+                #lengths = sorted([len(x) for x in matches])
+                #if min(lengths[0], lengths[-1]) / max(lengths[0], lengths[-1]) > 0.5:
+                #    self._lines = 0
+                #else:
+                leftover = len(text) - sum([len(match) for match in matches])
+                print leftover
+                print float(leftover) / len(text)
+
+                self._lines = len(matches)
+            
+                if (float(leftover) / len(text)) > 0.7:
+                    self._lines = 0
+
+            
+
+            #crossings = 0
+            #for x in xrange(0, len(smoothed_d_data) - 1):
+            #    if smoothed_d_data[x] > 0 and smoothed_d_data[x+1] < 0:
+            #        crossings += 1
+
+            #self._lines = crossings
+
+            #if sum(horizontal_ink) < 100:
+            #    self._lines = 0
 
             #print "len(data): %d" % len(data)
             #height = max(data)

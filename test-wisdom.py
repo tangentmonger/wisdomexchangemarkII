@@ -21,6 +21,7 @@ class TestWisdom(unittest.TestCase):
         filepaths = sorted(glob.glob(pattern))
         for filepath in filepaths:
             cls.sample_wisdom.append(Wisdom(filepath))
+        cls.sample_wisdom.sort(key=lambda x: expected[x.filename].lines)
 
     def test_best_angle(self):
         """
@@ -71,14 +72,18 @@ class TestWisdom(unittest.TestCase):
             #print "Testing %s" % wisdom.filename
             if wisdom.lines == answer.lines:
                 successes += 1
-                print "%s: PASS\t%f%%" % (wisdom.filename, float(successes)/tested*100)
-            #elif answer.lines > 0 and abs(answer.lines - wisdom.lines) == 1:
-            #    near += 1
+                print "%s: PASS\t%f%%\t%d" % (wisdom.filename, float(successes)/tested*100, answer.lines)
+            elif answer.lines > 0 and abs(answer.lines - wisdom.lines) == 1:
+                near += 1
+                print "%s: NEAR\t%f%%\t%d" % (wisdom.filename, float(successes+near)/tested*100, wisdom.lines )
             else:
                 print "%s: FAIL\t%f%%\t(expected %d, actual %d)" % (wisdom.filename, float(successes)/tested*100, answer.lines, wisdom.lines )
                 cv2.imwrite("failures/%s" % wisdom.filename, wisdom.prepared_rotated)
+
         print "Detected lines in %d out of %d textual wisdom" % (successes, len(self.sample_wisdom))
-        #print "Nearly detected lines in %d out of %d textual wisdom" % (near, len(self.sample_wisdom))
+        print "Nearly detected lines in %d out of %d textual wisdom" % (near, len(self.sample_wisdom))
+        print "Failed: %d out of %d textual wisdom" % ((len(self.sample_wisdom) - near - successes), len(self.sample_wisdom))
+
         self.assertGreaterEqual(int(float(successes+near)/len(self.sample_wisdom) * 100), 94) 
 
 
