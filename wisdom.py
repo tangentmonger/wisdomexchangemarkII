@@ -108,26 +108,31 @@ class Wisdom():
         The angle at which this wisdom looks most level.
         """
         if self._best_angle is None:
-            ink_areas = {}
-            search_start = 0
-            search_end = 180
-            sample_distance = 30 # searches
-            best_angle = 0
+            if self.blank == True:
+                self._best_angle = 0
+            else:
+                ink_areas = {}
+                search_start = 0
+                search_end = 180
+                sample_distance = 30 # searches
+                best_angle = 0
 
-            while sample_distance > ANGLE_RESOLUTION:
-                for angle in xrange(search_start, search_end, sample_distance):
-                    if angle not in ink_areas:
-                        ink_area = self._get_area_for_levelling(angle % 180)
-                        ink_areas[angle] = ink_area
+                while sample_distance > ANGLE_RESOLUTION:
+                    for angle in xrange(search_start,
+                                        search_end,
+                                        sample_distance):
+                        if angle not in ink_areas:
+                            ink_area = self._get_area_for_levelling(angle % 180)
+                            ink_areas[angle] = ink_area
 
-                best_angle = min(ink_areas.items(), key=lambda x: x[1])
+                    best_angle = min(ink_areas.items(), key=lambda x: x[1])
 
-                new_search_space = (search_end - search_start) / 2
-                search_start = best_angle[0] - (new_search_space / 2)
-                search_end = best_angle[0] + (new_search_space / 2)
-                sample_distance = sample_distance / 2
+                    new_search_space = (search_end - search_start) / 2
+                    search_start = best_angle[0] - (new_search_space / 2)
+                    search_end = best_angle[0] + (new_search_space / 2)
+                    sample_distance = sample_distance / 2
 
-            self._best_angle = best_angle[0]
+                self._best_angle = best_angle[0]
         return self._best_angle
 
     def _get_area_for_levelling(self, angle):

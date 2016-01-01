@@ -16,15 +16,35 @@ Analysis
 
 Step 1: prepare the image for analysis. Convert it to a smaller, inverted, B&W image, with extra padding.
 
-Step 2: level it. The approach here is to stretch out each pixel horizontally and record the resulting area, then rotate the image a few degrees and try again, and so on. When the lines of text are level, the area is smallest. This approach correctly levels about 95% of textual wisdom. It fails on images (which is fine), and on text where the lines are closer together than the letters. It is slower than I would like because image rotation is costly. Levelled wisdom is sometimes upside down because this algorithm has no way to distinguish text orientation, but for my purposes that's ok.
+Step 2: check whether the image is blank, by summing the ink area. If it's less than the threshold (to allow for noise) the image contains no wisdom and analysis stops.
+
+Step 3: level it. When the lines are level, and you stretch out each pixel horizontally and record the resulting ink area, the total is much smaller than when the lines are not level. So, search through different angles of rotation to find the minimum. This approach correctly levels about 95% of textual wisdom. It fails on images (which is fine), and on text where the lines are closer together than the letters. Levelled wisdom is sometimes upside down because this algorithm has no way to distinguish text orientation, but for my purposes that's ok.
 
 ![Levelling in action](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/master/levelling.gif "Levelling in action")
 
-Step 3: count the number of lines. Summing the amount of ink on each line produces a characteristic peak for each line. Identifying these peaks is in progress. 
+Step 4: decide whether this wisdom comprises text, an image or both. Tried a few approaches on different branches:
+
+* Sum the ink on each row and detect peaks. This works quite well for textual wisdom (and gives a count of the lines), but is poor for detecting images because they also generate peaks.
+
+* Sum the ink on each row and column, and multiply together to give a spectrograph representation. Looks cool, and creates different areas for images and lines of text, but there's no clear way to analyse it from that point.
+
+* Sum the ink on each row and differentiate it, and detect peaks in that. Works about as well as the first approach. Tried to detect images by the quality of the peaks, but this just misdetected textual wisdom.
+
+* Sum the ink on each row and compare it to templates for 1-n lines. Not great because any noise in the image throws off the start/end points. Wouldn't work well for messy textual wisdom.
+
+* Go back to the rotation stage and look for the sudden occurrence of clear peaks in the rotation data. If it doesn't show, this is probably an image. Not much use for differentiating single-line wisdom and compact images.
+
+* Machine learning: no idea what I'm doing here. What features would distinguish text from images? Average line lengths, maybe? Enclosed areas? I probably don't have enough samples to train a neural network.
+
+* ???
+
+It doesn't matter too much if the line count is off by one (write one line, get two lines?) but I really want to distinguish images and text reliably.
+
+
 
 Build
 -----
 
 Travis CI status: [![Travis CI status](https://travis-ci.org/tangentmonger/wisdomexchangemarkII.svg?branch=master)](https://travis-ci.org/tangentmonger/wisdomexchangemarkII)
 
-Requires OpenCV v2.4, which is a bit of a faff to install. See [.travis.yml](https://github.com/tangentmonger/wisdomexchangemarkII/blob/master/.travis.yml) for one way of doing it.
+Requires OpenCV v2.4, which is a bit of a faff to install. See [.travis.yml](https://github.com/tangentmonger/wisdomexchangemarkII/blob/master/.travis.yml) for one way of doing it. (So far I am not using any of OpenCV's specific features; it might be possible to convert to PIL which is easier to install.)
