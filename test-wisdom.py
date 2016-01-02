@@ -7,6 +7,7 @@ from wisdom import Wisdom
 from expected import expected
 
 TEST_DATA = "sample_wisdom" # contains 100 wisdom samples
+TEST_DATA_SUBSAMPLE = "sample_wisdom_subsample" # contains 13 labelled wisdom samples
 
 class TestWisdom(unittest.TestCase):
 
@@ -59,6 +60,29 @@ class TestWisdom(unittest.TestCase):
             else:
                 print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.blank)
         print "Blank detection in %d out of %d wisdom" % (successes, len(filepaths))
+        self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
+
+    def test_detect_drawings(self):
+        """
+        Check that text and drawings can be distinguished with reasonable
+        accuracy
+        """
+        successes = 0
+        pattern = os.path.join(TEST_DATA, "*.jpeg")
+        filepaths = sorted(glob.glob(pattern))
+        for filepath in filepaths:
+            wisdom = Wisdom(filepath)
+            #answer = expected[wisdom.filename]
+            #if answer and wisdom.drawing == answer.image:
+            #    print "%s:\tPASS" % wisdom.filename
+            #    successes += 1
+            #else:
+            #    #print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.image)
+            #    print "%s:\tFAIL\t(expected %s)" % (wisdom.filename)
+            print wisdom.filename
+            wisdom.drawing
+        print "Image detection in %d out of %d wisdom" % (successes, len(filepaths))
+        self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 77) #can get this with no code at all :(
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
 
 

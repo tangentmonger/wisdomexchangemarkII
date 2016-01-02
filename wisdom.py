@@ -5,6 +5,7 @@ Represents one item of wisdom and its analysis.
 import math
 import cv2
 import os
+import numpy
 
 # Tuning ================
 # Angle resolution: smallest angle used in levelling
@@ -27,6 +28,7 @@ class Wisdom():
         self._prepared = None
         self._prepared_rotated = None
         self._best_angle = None
+        self._drawing = None
 
 
     @property
@@ -172,3 +174,77 @@ class Wisdom():
         image = self.prepared
         ink = sum([sum(row) / 255 for row in image])
         return ink <= MIMINUM_INK
+
+    @property
+    def drawing(self):
+        """
+        Return True if this wisdom contains an image
+        """
+        if self._drawing == None:
+            if self.blank:
+                self._drawing = False
+            else:
+                #lines = cv2.HoughLines(image=self.prepared,
+                #                       rho=10,
+                #                       theta=math.radians(1),
+                #                       threshold=1)
+                ##print lines
+                #print len(lines[0])
+
+                # basically a Hough transform
+                data = self._get_histogram_at_angles()
+                hough = numpy.array(data)
+                #hough = cv2.normalize(src=hough,alpha=0, beta=255, dtype=cv2.NORM_MINMAX)
+                hough = cv2.convertScaleAbs(hough) # -> 8 bit
+                cv2.normalize(hough, hough, 0, 255, cv2.NORM_MINMAX)
+                #hough = cv2.GaussianBlur(hough, (5,5),0)
+                #for x in xrange(0, 255):
+                #    _, threshold = cv2.threshold(hough, x, 255, cv2.THRESH_BINARY)
+                #    cv2.imwrite("analysis/%s.%d.jpeg" % (self.filename,x), threshold)
+                cv2.imwrite("hough/%s" % self.filename, hough)
+
+
+                #hough = cv.fromarray(numpy.array(data))
+                #hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
+                # Set up the detector with default parameters.
+                # Setup SimpleBlobDetector parameters.
+                #params = cv2.SimpleBlobDetector_Params()
+                # 
+                ## Change thresholds
+                ##params.minThreshold = 0
+                ##params.maxThreshold = 100
+                ##params.thresholdStep = 10
+                #  
+                ## Filter by Area.
+                #params.filterByArea = False
+                #params.minArea = 1500
+                #   
+                ## Filter by Circularity
+                #params.filterByCircularity = False
+                #params.minCircularity = 0.1
+                #    
+                ## Filter by Convexity
+                #params.filterByConvexity = False
+                #params.minConvexity = 0.87
+                #     
+                ## Filter by Inertia
+                #params.filterByInertia = False
+                #params.minInertiaRatio = 0.01
+                #detector = cv2.SimpleBlobDetector(params)
+                # 
+                ## Detect blobs.
+                #keypoints = detector.detect(hough)
+                #print keypoints
+                #print len(keypoints)
+                #im_with_keypoints = cv2.drawKeypoints(hough, keypoints, numpy.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) 
+                #cv2.imwrite("analysis/%s" % self.filename, im_with_keypoints)
+                #self._drawing = (len(keypoints) == 0)
+        return self._drawing
+
+    def _get_histogram_at_angles(self):
+        # there's a much faster way to do this, how does opencv do it?
+        data = []
+        for angle in xrange(0, 180):
+            image = self._rotate(angle)
+            data.append([int(sum(row) / 255) for row in image])
+        return data
