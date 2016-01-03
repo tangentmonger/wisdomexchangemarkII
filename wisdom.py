@@ -184,6 +184,38 @@ class Wisdom():
             if self.blank:
                 self._drawing = False
             else:
+                # basically a Hough transform
+                #data = self._get_histogram_at_angles()
+                #hough = numpy.array(data)
+                #hough = cv2.normalize(src=hough,alpha=0, beta=255, dtype=cv2.NORM_MINMAX)
+                #hough = cv2.convertScaleAbs(hough) # -> 8 bit
+                #cv2.normalize(hough, hough, 0, 255, cv2.NORM_MINMAX)
+                #hough = cv2.GaussianBlur(hough, (5,5),0)
+                #for x in xrange(0, 255):
+                #    _, threshold = cv2.threshold(hough, x, 255, cv2.THRESH_BINARY)
+                #    cv2.imwrite("analysis/%s.%d.jpeg" % (self.filename,x), threshold)
+                #cv2.imwrite("hough/%s" % self.filename, hough)
+                hough = cv2.imread("hough/%s" % self.filename)
+                hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
+                print hough.dtype
+                print hough.shape
+                hough_2 = numpy.fliplr(hough)
+                full_hough = numpy.concatenate((hough, hough_2))
+                
+                #_, full_hough = cv2.threshold(full_hough, 128, 0, cv2.THRESH_TOZERO)
+                #full_hough = cv2.GaussianBlur(full_hough, (5,5),0)
+                #full_hough = cv2.convertScaleAbs(full_hough) # -> 8 bit
+                print full_hough.dtype
+
+                #copy = full_hough 
+                #contours, _ = cv2.findContours(copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+                #for c in contours:
+                    #rect = cv2.boundingRect(c)
+                    #cv2.rectangle(full_hough, (rect[0], rect[1]), (rect[2],rect[3]), 255)
+
+                #_, hough = cv2.threshold(hough, 200, 255, cv2.THRESH_BINARY)
+                cv2.imwrite("analysis/%s" % self.filename, full_hough)
+
                 #lines = cv2.HoughLines(image=self.prepared,
                 #                       rho=10,
                 #                       theta=math.radians(1),
@@ -191,18 +223,7 @@ class Wisdom():
                 ##print lines
                 #print len(lines[0])
 
-                # basically a Hough transform
-                data = self._get_histogram_at_angles()
-                hough = numpy.array(data)
-                #hough = cv2.normalize(src=hough,alpha=0, beta=255, dtype=cv2.NORM_MINMAX)
-                hough = cv2.convertScaleAbs(hough) # -> 8 bit
-                cv2.normalize(hough, hough, 0, 255, cv2.NORM_MINMAX)
-                #hough = cv2.GaussianBlur(hough, (5,5),0)
-                #for x in xrange(0, 255):
-                #    _, threshold = cv2.threshold(hough, x, 255, cv2.THRESH_BINARY)
-                #    cv2.imwrite("analysis/%s.%d.jpeg" % (self.filename,x), threshold)
-                cv2.imwrite("hough/%s" % self.filename, hough)
-
+               
 
                 #hough = cv.fromarray(numpy.array(data))
                 #hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
@@ -243,6 +264,7 @@ class Wisdom():
 
     def _get_histogram_at_angles(self):
         # there's a much faster way to do this, how does opencv do it?
+        # see http://danielbowers.com/line-detection-via-hough-transform/
         data = []
         for angle in xrange(0, 180):
             image = self._rotate(angle)
