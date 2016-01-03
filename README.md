@@ -18,11 +18,7 @@ Step 1: prepare the image for analysis. Convert it to a smaller, inverted, B&W i
 
 Step 2: check whether the image is blank, by summing the ink area. If it's less than the threshold (to allow for noise) the image contains no wisdom and analysis stops.
 
-Step 3: level it. When the lines are level, and you stretch out each pixel horizontally and record the resulting ink area, the total is much smaller than when the lines are not level. So, search through different angles of rotation to find the minimum. This approach correctly levels about 95% of textual wisdom. It fails on images (which is fine), and on text where the lines are closer together than the letters. Levelled wisdom is sometimes upside down because this algorithm has no way to distinguish text orientation, but for my purposes that's ok.
-
-![Levelling in action](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/master/levelling.gif "Levelling in action")
-
-Step 4: decide whether this wisdom comprises text, an image or both. On this branch, try it with a Hough transform:
+Step 3: decide whether this wisdom comprises text, an image or both. On this branch, try it with a Hough transform:
 
 ![Accumulator array](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/rotate_peaks/hough/wisdom-0047.jpeg)
 
