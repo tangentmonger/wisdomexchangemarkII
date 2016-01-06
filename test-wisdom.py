@@ -68,17 +68,36 @@ class TestWisdom(unittest.TestCase):
         accuracy
         """
         successes = 0
+        images = 0
+        nonimages = 0
+        image_successes = 0
+        image_fails = 0
+        nonimage_successes = 0
+        nonimage_fails = 0
         pattern = os.path.join(TEST_DATA, "*.jpeg")
         filepaths = sorted(glob.glob(pattern))
         for filepath in filepaths:
             wisdom = Wisdom(filepath)
             answer = expected[wisdom.filename]
-            if answer and wisdom.drawing == answer.image:
-                print "%s:\tPASS" % wisdom.filename
-                successes += 1
-            else:
-                print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.image)
+            if answer:
+                if wisdom.drawing == answer.image:
+                    print "%s:\tPASS" % wisdom.filename
+                    successes += 1
+                    if answer.image:
+                        images +=1
+                        image_successes += 1
+                    else:
+                        nonimages += 1
+                        nonimage_successes += 1
+                else:
+                    print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.image)
+                    if answer.image:
+                        images +=1
+                    else:
+                        nonimages += 1
         print "Image detection in %d out of %d wisdom" % (successes, len(filepaths))
+        print "Image detection: %s out of %s" % (image_successes, images)
+        print "Nonimage detection: %s out of %s" % (nonimage_successes, nonimages)
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 77) #can get this with no code at all :(
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
 

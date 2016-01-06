@@ -29,6 +29,10 @@ This transform reveals a lot of information. Peak blobs in a row are probably li
     match numPos and numNeg to info.dat and bg.txt respectively
     what do all the other parameters actually do?
 
+    Image detection in 76 out of 100 wisdom
+    Image detection: 14 out of 23
+    Nonimage detection: 62 out of 77
+
 TODO: there's a much faster way to generate the Hough transform accumulator array, see comment.
 
 Build
