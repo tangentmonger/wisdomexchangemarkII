@@ -195,17 +195,17 @@ class Wisdom():
                 #    _, threshold = cv2.threshold(hough, x, 255, cv2.THRESH_BINARY)
                 #    cv2.imwrite("analysis/%s.%d.jpeg" % (self.filename,x), threshold)
                 #cv2.imwrite("hough/%s" % self.filename, hough)
-                hough = cv2.imread("hough/%s" % self.filename)
+                hough = cv2.imread("full_hough/%s" % self.filename)
                 hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
-                print hough.dtype
-                print hough.shape
-                hough_2 = numpy.fliplr(hough)
-                full_hough = numpy.concatenate((hough, hough_2))
+                #print hough.dtype
+                #print hough.shape
+                #hough_2 = numpy.fliplr(hough)
+                #full_hough = numpy.concatenate((hough, hough_2))
                 
                 #_, full_hough = cv2.threshold(full_hough, 128, 0, cv2.THRESH_TOZERO)
                 #full_hough = cv2.GaussianBlur(full_hough, (5,5),0)
                 #full_hough = cv2.convertScaleAbs(full_hough) # -> 8 bit
-                print full_hough.dtype
+                #print full_hough.dtype
 
                 #copy = full_hough 
                 #contours, _ = cv2.findContours(copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -214,7 +214,17 @@ class Wisdom():
                     #cv2.rectangle(full_hough, (rect[0], rect[1]), (rect[2],rect[3]), 255)
 
                 #_, hough = cv2.threshold(hough, 200, 255, cv2.THRESH_BINARY)
-                cv2.imwrite("analysis/%s" % self.filename, full_hough)
+                #cv2.imwrite("analysis/%s" % self.filename, full_hough)
+
+                classifier = cv2.CascadeClassifier("cascade.xml")
+                rects =  classifier.detectMultiScale(image=hough)
+                print rects
+                for rect in rects:
+                    cv2.rectangle(hough, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), 255, 1)
+                cv2.imwrite("results/%s" % self.filename, hough)
+                print len(rects)
+                self._drawing = (len(rects) == 0)
+                
 
                 #lines = cv2.HoughLines(image=self.prepared,
                 #                       rho=10,

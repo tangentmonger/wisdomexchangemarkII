@@ -72,15 +72,12 @@ class TestWisdom(unittest.TestCase):
         filepaths = sorted(glob.glob(pattern))
         for filepath in filepaths:
             wisdom = Wisdom(filepath)
-            #answer = expected[wisdom.filename]
-            #if answer and wisdom.drawing == answer.image:
-            #    print "%s:\tPASS" % wisdom.filename
-            #    successes += 1
-            #else:
-            #    #print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.image)
-            #    print "%s:\tFAIL\t(expected %s)" % (wisdom.filename)
-            print wisdom.filename
-            wisdom.drawing
+            answer = expected[wisdom.filename]
+            if answer and wisdom.drawing == answer.image:
+                print "%s:\tPASS" % wisdom.filename
+                successes += 1
+            else:
+                print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.image)
         print "Image detection in %d out of %d wisdom" % (successes, len(filepaths))
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 77) #can get this with no code at all :(
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)

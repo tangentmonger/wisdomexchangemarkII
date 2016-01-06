@@ -1,0 +1,10 @@
+full_hough/wisdom-0002.jpeg
+full_hough/wisdom-0003.jpeg
+full_hough/wisdom-0004.jpeg
+full_hough/wisdom-0027.jpeg
+full_hough/wisdom-0048.jpeg
+full_hough/wisdom-0053.jpeg
+full_hough/wisdom-0054.jpeg
+full_hough/wisdom-0055.jpeg
+full_hough/wisdom-0056.jpeg
+full_hough/wisdom-0079.jpeg

@@ -22,15 +22,12 @@ Step 3: decide whether this wisdom comprises text, an image or both. On this bra
 
 ![Accumulator array](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/rotate_peaks/hough/wisdom-0047.jpeg)
 
-This transform reveals a lot of information. Peak blobs in a row are probably lines of text, the y component gives the most level angle, tiny peaks are probably lines, images create a mess of peaks (or no particular peaks). Even text/image combinations could probably be detected here. The question becomes how to identify those peak blobs. 
+This transform reveals a lot of information. Peak blobs in a row are probably lines of text, the y component gives the most level angle, tiny peaks are probably lines, images create a mess of peaks (or no particular peaks). Then use Haar feature cascade classifier to identify those peak blobs. 
 
-* Tried some thresholding but the results looked inconsistent. 
+    opencv_traincascade -data ./ -vec positive_vector.dat -bg bg.txt -numPos 22 -numNeg 10 -numStages 20 -minHitRate 0.900
 
-* Could try plotting the lines from the transform and then ... something. 
-
-* Try ML to identify the peak blobs, which have a particular "crossing" shape although sometimes at an angle. In particular, try Haar feature cascade. There's a way of training these things. See http://www.codeproject.com/Articles/441226/Haar-feature-Object-Detection-in-Csharp and http://opencv-python-tutroals.readthedocs.org/en/latest/py_tutorials/py_objdetect/py_face_detection/py_face_detection.html
-
-** see also: https://en.wikipedia.org/wiki/Local_binary_patterns and the ternary version, might be a good fit for these blobs.
+    match numPos and numNeg to info.dat and bg.txt respectively
+    what do all the other parameters actually do?
 
 TODO: there's a much faster way to generate the Hough transform accumulator array, see comment.
 
