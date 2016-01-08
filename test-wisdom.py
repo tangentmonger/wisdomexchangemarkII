@@ -2,6 +2,7 @@ import unittest
 import os
 import glob
 import cv2
+import time
 
 from wisdom import Wisdom
 from expected import expected
@@ -85,6 +86,19 @@ class TestWisdom(unittest.TestCase):
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 77) #can get this with no code at all :(
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
 
+    def test_compare_hough(self):
+        pattern = os.path.join(TEST_DATA, "*.jpeg")
+        filepaths = sorted(glob.glob(pattern))
+        for filepath in filepaths:
+            wisdom = Wisdom(filepath)
+            old_start_time = time.time()
+            old_result = wisdom._get_histogram_at_angles()
+            old_time = time.time() - old_start_time
+            new_start_time = time.time()
+            new_result = wisdom._get_hough_transform()
+            new_time = time.time() - new_start_time
+            self.assertLess(new_time, old_time)
+            self.assertEqual(old_result, new_result)
 
 if __name__ == '__main__':
     unittest.main()

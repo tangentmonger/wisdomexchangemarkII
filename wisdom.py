@@ -270,3 +270,6 @@ class Wisdom():
             image = self._rotate(angle)
             data.append([int(sum(row) / 255) for row in image])
         return data
+
+    def _get_hough_transform(self):
+        return []
