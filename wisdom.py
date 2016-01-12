@@ -6,6 +6,8 @@ import math
 import cv2
 import os
 import numpy
+#import scipy
+from scipy.sparse import csr_matrix
 
 # Tuning ================
 # Angle resolution: smallest angle used in levelling
@@ -197,15 +199,15 @@ class Wisdom():
                 #cv2.imwrite("hough/%s" % self.filename, hough)
                 hough = cv2.imread("hough/%s" % self.filename)
                 hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
-                print hough.dtype
-                print hough.shape
+                #print hough.dtype
+                #print hough.shape
                 hough_2 = numpy.fliplr(hough)
                 full_hough = numpy.concatenate((hough, hough_2))
                 
                 #_, full_hough = cv2.threshold(full_hough, 128, 0, cv2.THRESH_TOZERO)
                 #full_hough = cv2.GaussianBlur(full_hough, (5,5),0)
                 #full_hough = cv2.convertScaleAbs(full_hough) # -> 8 bit
-                print full_hough.dtype
+                #print full_hough.dtype
 
                 #copy = full_hough 
                 #contours, _ = cv2.findContours(copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -272,4 +274,70 @@ class Wisdom():
         return data
 
     def _get_hough_transform(self):
-        return []
+        #lines = cv2.HoughLines(image=self.prepared,
+        #                               rho=1,
+        #                               theta=math.radians(1),
+        #                               threshold=1)
+        #print lines
+        #accumulator = numpy.zeros((180, width, 1), numpy.uint8)
+        #for rho, theta in lines:
+        #    accumulator[int(math.degrees(theta)), int(rho) % width] += 1
+        #accumulator = numpy.array([[b for _,b in sub] for sub in lines])
+        #cv2.normalize(accumulator, accumulator, 0, 255, cv2.NORM_MINMAX)
+        #accumulator = cv2.convertScaleAbs(accumulator) # -> 8 bit
+        #return accumulator
+
+
+
+        image = self.prepared
+        #image = cv2.imread("test.jpeg")
+        #mage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        #image = cv2.convertScaleAbs(image) # -> 8 bit
+        (height, width) = image.shape[:2]
+        print height, width
+        accumulator = numpy.zeros((180, width*2, 1))
+        #accumulator = numpy.zeros((180, width, 1))
+        #accumulator[30][30] = 255
+        #print accumulator[30]
+        #hough = cv2.convertScaleAbs(hough) # -> 8 bit
+        #hough = cv2.normalize(src=hough ,alpha=0, beta=255, dtype=cv2.NORM_MINMAX)
+        #return hough
+
+        #print cv2.LUT(image, numpy.array([x for x in xrange(0, 256)], numpy.uint8))
+
+        #sparse = [(x,y) for   ]
+        #find(data)
+        #print data
+
+
+        for theta in xrange(-90, 90):
+            theta_rad = math.radians(theta)
+            cos_theta = math.cos(theta_rad)
+            sin_theta = math.sin(theta_rad)
+            for (y, x) in numpy.transpose(numpy.nonzero(image)):
+                x = float(x) - (float(width)/2)
+                y = float(y) - (float(height)/2)
+                rho = math.floor((x*cos_theta) + (y*sin_theta))
+
+                #print x,y, theta, rho
+                #rho = int(rho + (width/2)) % width
+                #rho = int(rho) % width
+                try:
+                    accumulator[theta - 90][rho - width] += 1
+                except:
+                    
+                    print rho, theta, x, y
+                    raise
+
+
+        #accumulator = numpy.zeros((180, width, 1), numpy.uint8)
+        #accumulator[:,:] = 128
+        #accumulator[3][4] = 20
+        #print numpy.amax(accumulator)
+        #print numpy.amin(accumulator)
+        #accumulator = cv2.convertScaleAbs(accumulator) # -> 8 bit
+        cv2.normalize(accumulator, accumulator, 0, 255, cv2.NORM_MINMAX)
+        #accumulator2 = cv2.normalize(src=accumulator, alpha=0, beta=255, dtype=cv2.NORM_MINMAX)
+        #print numpy.amax(accumulator)
+        #print numpy.amin(accumulator)
+        return accumulator
