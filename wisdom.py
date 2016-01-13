@@ -59,8 +59,8 @@ class Wisdom():
             image = self.original
             # change to greyscale
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            # resize, 10%
-            image = cv2.resize(image, (0, 0), fx=0.1, fy=0.1)
+            # resize, 5%
+            image = cv2.resize(image, (0, 0), fx=0.05, fy=0.05)
             # invert and threshold (white on black)
             threshold = 230 # if a pixel is below this...
             output_value = 255 # output white (otherwise black)
@@ -186,158 +186,35 @@ class Wisdom():
             if self.blank:
                 self._drawing = False
             else:
-                # basically a Hough transform
-                #data = self._get_histogram_at_angles()
-                #hough = numpy.array(data)
-                #hough = cv2.normalize(src=hough,alpha=0, beta=255, dtype=cv2.NORM_MINMAX)
-                #hough = cv2.convertScaleAbs(hough) # -> 8 bit
-                #cv2.normalize(hough, hough, 0, 255, cv2.NORM_MINMAX)
-                #hough = cv2.GaussianBlur(hough, (5,5),0)
-                #for x in xrange(0, 255):
-                #    _, threshold = cv2.threshold(hough, x, 255, cv2.THRESH_BINARY)
-                #    cv2.imwrite("analysis/%s.%d.jpeg" % (self.filename,x), threshold)
-                #cv2.imwrite("hough/%s" % self.filename, hough)
-                hough = cv2.imread("hough/%s" % self.filename)
-                hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
-                #print hough.dtype
-                #print hough.shape
-                hough_2 = numpy.fliplr(hough)
-                full_hough = numpy.concatenate((hough, hough_2))
+                hough = self._get_hough_transform()
+                #hough = cv2.imread("hough/%s" % self.filename)
+                #hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
+                full_hough = numpy.concatenate((hough, numpy.fliplr(hough)))
                 
-                #_, full_hough = cv2.threshold(full_hough, 128, 0, cv2.THRESH_TOZERO)
-                #full_hough = cv2.GaussianBlur(full_hough, (5,5),0)
-                #full_hough = cv2.convertScaleAbs(full_hough) # -> 8 bit
-                #print full_hough.dtype
-
-                #copy = full_hough 
-                #contours, _ = cv2.findContours(copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-                #for c in contours:
-                    #rect = cv2.boundingRect(c)
-                    #cv2.rectangle(full_hough, (rect[0], rect[1]), (rect[2],rect[3]), 255)
-
-                #_, hough = cv2.threshold(hough, 200, 255, cv2.THRESH_BINARY)
                 cv2.imwrite("analysis/%s" % self.filename, full_hough)
 
-                #lines = cv2.HoughLines(image=self.prepared,
-                #                       rho=10,
-                #                       theta=math.radians(1),
-                #                       threshold=1)
-                ##print lines
-                #print len(lines[0])
-
-               
-
-                #hough = cv.fromarray(numpy.array(data))
-                #hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
-                # Set up the detector with default parameters.
-                # Setup SimpleBlobDetector parameters.
-                #params = cv2.SimpleBlobDetector_Params()
-                # 
-                ## Change thresholds
-                ##params.minThreshold = 0
-                ##params.maxThreshold = 100
-                ##params.thresholdStep = 10
-                #  
-                ## Filter by Area.
-                #params.filterByArea = False
-                #params.minArea = 1500
-                #   
-                ## Filter by Circularity
-                #params.filterByCircularity = False
-                #params.minCircularity = 0.1
-                #    
-                ## Filter by Convexity
-                #params.filterByConvexity = False
-                #params.minConvexity = 0.87
-                #     
-                ## Filter by Inertia
-                #params.filterByInertia = False
-                #params.minInertiaRatio = 0.01
-                #detector = cv2.SimpleBlobDetector(params)
-                # 
-                ## Detect blobs.
-                #keypoints = detector.detect(hough)
-                #print keypoints
-                #print len(keypoints)
-                #im_with_keypoints = cv2.drawKeypoints(hough, keypoints, numpy.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) 
-                #cv2.imwrite("analysis/%s" % self.filename, im_with_keypoints)
-                #self._drawing = (len(keypoints) == 0)
-        return self._drawing
-
-    def _get_histogram_at_angles(self):
-        # there's a much faster way to do this, how does opencv do it?
-        # see http://danielbowers.com/line-detection-via-hough-transform/
-        data = []
-        for angle in xrange(0, 180):
-            image = self._rotate(angle)
-            data.append([int(sum(row) / 255) for row in image])
-        return data
+                return self._drawing
 
     def _get_hough_transform(self):
-        #lines = cv2.HoughLines(image=self.prepared,
-        #                               rho=1,
-        #                               theta=math.radians(1),
-        #                               threshold=1)
-        #print lines
-        #accumulator = numpy.zeros((180, width, 1), numpy.uint8)
-        #for rho, theta in lines:
-        #    accumulator[int(math.degrees(theta)), int(rho) % width] += 1
-        #accumulator = numpy.array([[b for _,b in sub] for sub in lines])
-        #cv2.normalize(accumulator, accumulator, 0, 255, cv2.NORM_MINMAX)
-        #accumulator = cv2.convertScaleAbs(accumulator) # -> 8 bit
-        #return accumulator
-
-
-
+        """
+        Return Hough transform accumulator array for the prepared image.
+        """
         image = self.prepared
-        #image = cv2.imread("test.jpeg")
-        #mage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        #image = cv2.convertScaleAbs(image) # -> 8 bit
         (height, width) = image.shape[:2]
-        print height, width
-        accumulator = numpy.zeros((180, width*2, 1))
-        #accumulator = numpy.zeros((180, width, 1))
-        #accumulator[30][30] = 255
-        #print accumulator[30]
-        #hough = cv2.convertScaleAbs(hough) # -> 8 bit
-        #hough = cv2.normalize(src=hough ,alpha=0, beta=255, dtype=cv2.NORM_MINMAX)
-        #return hough
-
-        #print cv2.LUT(image, numpy.array([x for x in xrange(0, 256)], numpy.uint8))
-
-        #sparse = [(x,y) for   ]
-        #find(data)
-        #print data
-
+        accumulator_width = math.ceil(math.sqrt(2 * (width**2)))
+        accumulator = numpy.zeros((180, accumulator_width, 1))
 
         for theta in xrange(-90, 90):
             theta_rad = math.radians(theta)
             cos_theta = math.cos(theta_rad)
             sin_theta = math.sin(theta_rad)
+            # convert image to sparse array
             for (y, x) in numpy.transpose(numpy.nonzero(image)):
                 x = float(x) - (float(width)/2)
                 y = float(y) - (float(height)/2)
                 rho = math.floor((x*cos_theta) + (y*sin_theta))
-
-                #print x,y, theta, rho
-                #rho = int(rho + (width/2)) % width
-                #rho = int(rho) % width
-                try:
-                    accumulator[theta - 90][rho - width] += 1
-                except:
-                    
-                    print rho, theta, x, y
-                    raise
-
-
-        #accumulator = numpy.zeros((180, width, 1), numpy.uint8)
-        #accumulator[:,:] = 128
-        #accumulator[3][4] = 20
-        #print numpy.amax(accumulator)
-        #print numpy.amin(accumulator)
-        #accumulator = cv2.convertScaleAbs(accumulator) # -> 8 bit
+                rho += accumulator_width / 2
+                accumulator[theta - 90][rho] += 1
+        
         cv2.normalize(accumulator, accumulator, 0, 255, cv2.NORM_MINMAX)
-        #accumulator2 = cv2.normalize(src=accumulator, alpha=0, beta=255, dtype=cv2.NORM_MINMAX)
-        #print numpy.amax(accumulator)
-        #print numpy.amin(accumulator)
         return accumulator
