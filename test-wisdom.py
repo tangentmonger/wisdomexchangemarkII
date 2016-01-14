@@ -2,6 +2,8 @@ import unittest
 import os
 import glob
 import cv2
+import time
+import numpy
 
 from wisdom import Wisdom
 from expected import expected
@@ -61,6 +63,19 @@ class TestWisdom(unittest.TestCase):
                 print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.blank)
         print "Blank detection in %d out of %d wisdom" % (successes, len(filepaths))
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
+
+    def test_hough_transforms(self):
+        """
+        Check that transforms work and accumulator is correctly sized.
+        """
+        wisdom = Wisdom("test_hough_input.jpg")
+        default_accumulator = wisdom._get_hough_transform()
+        d_height, d_width = default_accumulator.shape[:2]
+        self.assertEqual(d_height, 180)
+        straight_accumulator = wisdom._get_hough_transform(straighten=True)
+        s_height, s_width = straight_accumulator.shape[:2]
+        self.assertEqual(s_height, 180)
+        self.assertGreater(s_width, d_width)
 
     def test_detect_drawings(self):
         """

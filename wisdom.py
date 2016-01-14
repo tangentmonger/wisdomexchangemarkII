@@ -79,7 +79,7 @@ class Wisdom():
         # ensure nothing is rotated by 0, otherwise it looks brighter
         # than the rest
         angle += 1
-        (height, width) = image.shape[:2]
+        height, width = image.shape[:2]
         longest_diagonal = math.sqrt(height**2 + width**2)
         # extend "canvas"
         extend_h = int((longest_diagonal - height) / 2 )
@@ -93,7 +93,7 @@ class Wisdom():
                                             value=0)
 
         # rotate
-        (height, width) = extended_image.shape[:2]
+        height, width = extended_image.shape[:2]
         center = (width / 2, height / 2)
         matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
         rotated_image = cv2.warpAffine(extended_image,
@@ -184,99 +184,53 @@ class Wisdom():
             if self.blank:
                 self._drawing = False
             else:
-                # basically a Hough transform
-                #data = self._get_histogram_at_angles()
-                #hough = numpy.array(data)
-                #hough = cv2.normalize(src=hough,alpha=0, beta=255, dtype=cv2.NORM_MINMAX)
-                #hough = cv2.convertScaleAbs(hough) # -> 8 bit
-                #cv2.normalize(hough, hough, 0, 255, cv2.NORM_MINMAX)
-                #hough = cv2.GaussianBlur(hough, (5,5),0)
-                #for x in xrange(0, 255):
-                #    _, threshold = cv2.threshold(hough, x, 255, cv2.THRESH_BINARY)
-                #    cv2.imwrite("analysis/%s.%d.jpeg" % (self.filename,x), threshold)
-                #cv2.imwrite("hough/%s" % self.filename, hough)
-                hough = cv2.imread("full_hough/%s" % self.filename)
-                hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
-                #print hough.dtype
-                #print hough.shape
-                #hough_2 = numpy.fliplr(hough)
-                #full_hough = numpy.concatenate((hough, hough_2))
-                
-                #_, full_hough = cv2.threshold(full_hough, 128, 0, cv2.THRESH_TOZERO)
-                #full_hough = cv2.GaussianBlur(full_hough, (5,5),0)
-                #full_hough = cv2.convertScaleAbs(full_hough) # -> 8 bit
-                #print full_hough.dtype
-
-                #copy = full_hough 
-                #contours, _ = cv2.findContours(copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-                #for c in contours:
-                    #rect = cv2.boundingRect(c)
-                    #cv2.rectangle(full_hough, (rect[0], rect[1]), (rect[2],rect[3]), 255)
-
-                #_, hough = cv2.threshold(hough, 200, 255, cv2.THRESH_BINARY)
-                #cv2.imwrite("analysis/%s" % self.filename, full_hough)
-
-                classifier = cv2.CascadeClassifier("cascade.xml")
-                rects =  classifier.detectMultiScale(image=hough)
-                print rects
-                for rect in rects:
-                    cv2.rectangle(hough, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), 255, 1)
-                cv2.imwrite("results/%s" % self.filename, hough)
-                print len(rects)
-                self._drawing = (len(rects) == 0)
-                
-
-                #lines = cv2.HoughLines(image=self.prepared,
-                #                       rho=10,
-                #                       theta=math.radians(1),
-                #                       threshold=1)
-                ##print lines
-                #print len(lines[0])
-
-               
-
-                #hough = cv.fromarray(numpy.array(data))
+                hough = self._get_hough_transform(straighten=True)
+                #hough = cv2.imread("hough/%s" % self.filename)
                 #hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
-                # Set up the detector with default parameters.
-                # Setup SimpleBlobDetector parameters.
-                #params = cv2.SimpleBlobDetector_Params()
-                # 
-                ## Change thresholds
-                ##params.minThreshold = 0
-                ##params.maxThreshold = 100
-                ##params.thresholdStep = 10
-                #  
-                ## Filter by Area.
-                #params.filterByArea = False
-                #params.minArea = 1500
-                #   
-                ## Filter by Circularity
-                #params.filterByCircularity = False
-                #params.minCircularity = 0.1
-                #    
-                ## Filter by Convexity
-                #params.filterByConvexity = False
-                #params.minConvexity = 0.87
-                #     
-                ## Filter by Inertia
-                #params.filterByInertia = False
-                #params.minInertiaRatio = 0.01
-                #detector = cv2.SimpleBlobDetector(params)
-                # 
-                ## Detect blobs.
-                #keypoints = detector.detect(hough)
-                #print keypoints
-                #print len(keypoints)
-                #im_with_keypoints = cv2.drawKeypoints(hough, keypoints, numpy.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) 
-                #cv2.imwrite("analysis/%s" % self.filename, im_with_keypoints)
-                #self._drawing = (len(keypoints) == 0)
-        return self._drawing
+                full_hough = numpy.concatenate((hough, numpy.fliplr(hough)))
+                
+                cv2.imwrite("analysis/%s" % self.filename, full_hough)
 
-    def _get_histogram_at_angles(self):
-        # there's a much faster way to do this, how does opencv do it?
-        # see http://danielbowers.com/line-detection-via-hough-transform/
-        data = []
-        for angle in xrange(0, 180):
-            image = self._rotate(angle)
-            data.append([int(sum(row) / 255) for row in image])
-        return data
+                return self._drawing
+
+    def _get_hough_transform(self, straighten=False):
+        """
+        Return Hough transform accumulator array for the prepared image.
+        Use straightened accumulator for easier analysis, or the default
+        unstraightened for display.
+        """
+        image = self.prepared
+        height, width = image.shape[:2]
+
+        centre_x = width/2
+        centre_y = height/2
+        if straighten:
+            # use centre of mass of image as the centre for the
+            # Hough transform to reduce skew
+            moments = cv2.moments(image, binaryImage=True)
+            centre_x = int(moments['m10']/moments['m00'])
+            centre_y = int(moments['m01']/moments['m00'])
+
+        # max distance from centre point to a possible pixel gives
+        # the required size of the accumulator array
+        max_x = max(centre_x, width-centre_x)
+        max_y = max(centre_y, height-centre_y)
+
+        accumulator_width = math.ceil(math.sqrt((max_x**2) + (max_y**2))) * 2
+        accumulator = numpy.zeros((180, accumulator_width, 1))
+
+        for theta_deg in xrange(-90, 90):
+            theta_rad = math.radians(theta_deg)
+            cos_theta = math.cos(theta_rad)
+            sin_theta = math.sin(theta_rad)
+            # convert image to sparse array
+            for (pixel_y, pixel_x) in numpy.transpose(numpy.nonzero(image)):
+                # get location relative to centre point
+                pixel_x -= centre_x
+                pixel_y -= centre_y
+                rho = math.floor((pixel_x*cos_theta) + (pixel_y*sin_theta))
+                rho += accumulator_width / 2
+                accumulator[theta_deg - 90][rho] += 1
+        
+        cv2.normalize(accumulator, accumulator, 0, 255, cv2.NORM_MINMAX)
+        return accumulator
