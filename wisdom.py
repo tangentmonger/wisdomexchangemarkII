@@ -6,8 +6,6 @@ import math
 import cv2
 import os
 import numpy
-#import scipy
-from scipy.sparse import csr_matrix
 
 # Tuning ================
 # Angle resolution: smallest angle used in levelling
@@ -81,7 +79,7 @@ class Wisdom():
         # ensure nothing is rotated by 0, otherwise it looks brighter
         # than the rest
         angle += 1
-        (height, width) = image.shape[:2]
+        height, width = image.shape[:2]
         longest_diagonal = math.sqrt(height**2 + width**2)
         # extend "canvas"
         extend_h = int((longest_diagonal - height) / 2 )
@@ -95,7 +93,7 @@ class Wisdom():
                                             value=0)
 
         # rotate
-        (height, width) = extended_image.shape[:2]
+        height, width = extended_image.shape[:2]
         center = (width / 2, height / 2)
         matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
         rotated_image = cv2.warpAffine(extended_image,
@@ -186,7 +184,7 @@ class Wisdom():
             if self.blank:
                 self._drawing = False
             else:
-                hough = self._get_hough_transform()
+                hough = self._get_hough_transform(straighten=True)
                 #hough = cv2.imread("hough/%s" % self.filename)
                 #hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
                 full_hough = numpy.concatenate((hough, numpy.fliplr(hough)))
@@ -195,26 +193,44 @@ class Wisdom():
 
                 return self._drawing
 
-    def _get_hough_transform(self):
+    def _get_hough_transform(self, straighten=False):
         """
         Return Hough transform accumulator array for the prepared image.
+        Use straightened accumulator for easier analysis, or the default
+        unstraightened for display.
         """
         image = self.prepared
-        (height, width) = image.shape[:2]
-        accumulator_width = math.ceil(math.sqrt(2 * (width**2)))
+        height, width = image.shape[:2]
+
+        centre_x = width/2
+        centre_y = height/2
+        if straighten:
+            # use centre of mass of image as the centre for the
+            # Hough transform to reduce skew
+            moments = cv2.moments(image, binaryImage=True)
+            centre_x = int(moments['m10']/moments['m00'])
+            centre_y = int(moments['m01']/moments['m00'])
+
+        # max distance from centre point to a possible pixel gives
+        # the required size of the accumulator array
+        max_x = max(centre_x, width-centre_x)
+        max_y = max(centre_y, height-centre_y)
+
+        accumulator_width = math.ceil(math.sqrt((max_x**2) + (max_y**2))) * 2
         accumulator = numpy.zeros((180, accumulator_width, 1))
 
-        for theta in xrange(-90, 90):
-            theta_rad = math.radians(theta)
+        for theta_deg in xrange(-90, 90):
+            theta_rad = math.radians(theta_deg)
             cos_theta = math.cos(theta_rad)
             sin_theta = math.sin(theta_rad)
             # convert image to sparse array
-            for (y, x) in numpy.transpose(numpy.nonzero(image)):
-                x = float(x) - (float(width)/2)
-                y = float(y) - (float(height)/2)
-                rho = math.floor((x*cos_theta) + (y*sin_theta))
+            for (pixel_y, pixel_x) in numpy.transpose(numpy.nonzero(image)):
+                # get location relative to centre point
+                pixel_x -= centre_x
+                pixel_y -= centre_y
+                rho = math.floor((pixel_x*cos_theta) + (pixel_y*sin_theta))
                 rho += accumulator_width / 2
-                accumulator[theta - 90][rho] += 1
+                accumulator[theta_deg - 90][rho] += 1
         
         cv2.normalize(accumulator, accumulator, 0, 255, cv2.NORM_MINMAX)
         return accumulator
