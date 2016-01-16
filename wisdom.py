@@ -187,7 +187,6 @@ class Wisdom():
                 hough = self._get_hough_transform(straighten=True)
                 #hough = cv2.imread("hough/%s" % self.filename)
                 #hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
-                full_hough = numpy.concatenate((hough, numpy.fliplr(hough)))
                 
                 cv2.imwrite("analysis/%s" % self.filename, full_hough)
 
@@ -233,4 +232,7 @@ class Wisdom():
                 accumulator[theta_deg - 90][rho] += 1
         
         cv2.normalize(accumulator, accumulator, 0, 255, cv2.NORM_MINMAX)
-        return accumulator
+        
+        # the other 180 is the same but flipped
+        full_360 = numpy.concatenate((accumulator, numpy.fliplr(accumulator)))
+        return full_360

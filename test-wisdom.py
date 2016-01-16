@@ -71,10 +71,10 @@ class TestWisdom(unittest.TestCase):
         wisdom = Wisdom("test_hough_input.jpg")
         default_accumulator = wisdom._get_hough_transform()
         d_height, d_width = default_accumulator.shape[:2]
-        self.assertEqual(d_height, 180)
+        self.assertEqual(d_height, 360)
         straight_accumulator = wisdom._get_hough_transform(straighten=True)
         s_height, s_width = straight_accumulator.shape[:2]
-        self.assertEqual(s_height, 180)
+        self.assertEqual(s_height, 360)
         self.assertGreater(s_width, d_width)
 
     def test_detect_drawings(self):
@@ -91,6 +91,13 @@ class TestWisdom(unittest.TestCase):
         nonimage_fails = 0
         pattern = os.path.join(TEST_DATA, "*.jpeg")
         filepaths = sorted(glob.glob(pattern))
+        #for filepath in filepaths[70:]:
+        #    wisdom = Wisdom(filepath)
+        #    if not wisdom.blank:
+        #        hough = wisdom._get_hough_transform(straighten=True)
+        #        cv2.imwrite("full_hough/%s" % wisdom.filename, hough)
+        #self.fail()
+
         for filepath in filepaths:
             wisdom = Wisdom(filepath)
             answer = expected[wisdom.filename]

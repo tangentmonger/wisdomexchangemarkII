@@ -112,3 +112,6 @@ with open(args.output, "w") as output_file:
         areas = ["{0} {1} {2} {3}".format(area[0][0], area[0][1], area[1][0], area[1][1]) for area in data[1]]
         output_file.write("{0}\t{1}\t{2}\n".format(data[0], len(data[1]), "\t".join(areas)))    
 
+print "Output file generated: {}".format(args.output)
+print "numPos = {}".format(sum([len(data[1]) for data in area_data]))
+

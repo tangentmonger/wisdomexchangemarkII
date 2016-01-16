@@ -18,13 +18,13 @@ Step 1: prepare the image for analysis. Convert it to a smaller, inverted, B&W i
 
 Step 2: check whether the image is blank, by summing the ink area. If it's less than the threshold (to allow for noise) the image contains no wisdom and analysis stops.
 
-Step 3: decide whether this wisdom comprises text, an image or both. On this branch, try it with a Hough transform:
+Step 3: decide whether this wisdom comprises text, an image or both. On this branch, try it with a straightened Hough transform:
 
-![Accumulator array](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/rotate_peaks/hough/wisdom-0047.jpeg)
+![Accumulator array](https://raw.githubusercontent.com/tangentmonger/wisdomexchangemarkII/cascade_classifier/full_hough/wisdom-0047.jpeg)
 
 This transform reveals a lot of information. Peak blobs in a row are probably lines of text, the y component gives the most level angle, tiny peaks are probably lines, images create a mess of peaks (or no particular peaks). Then use Haar feature cascade classifier to identify those peak blobs. 
 
-    opencv_traincascade -data ./ -vec positive_vector.dat -bg bg.txt -numPos 22 -numNeg 10 -numStages 20 -minHitRate 0.900
+    opencv_traincascade -data ./ -vec info.dat -bg bg.txt -numPos 22 -numNeg 10 -numStages 20 -minHitRate 0.900
 
     match numPos and numNeg to info.dat and bg.txt respectively
     what do all the other parameters actually do?
@@ -33,7 +33,8 @@ This transform reveals a lot of information. Peak blobs in a row are probably li
     Image detection: 14 out of 23
     Nonimage detection: 62 out of 77
 
-TODO: there's a much faster way to generate the Hough transform accumulator array, see comment.
+generate_positive.py is a quick and dirty tool to assist with generating the positive example metadata (e.g. info.dat) for training OpenCV cascade classifiers. Go through images and drag or shift-drag to select areas of interest. (x to undo a selection, n and p for next/previous image). Hit Enter when complete. The resulting data file can be passed in to the opencv_traincascade utility.
+
 
 Build
 -----
