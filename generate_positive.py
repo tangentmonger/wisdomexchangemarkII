@@ -1,3 +1,10 @@
+"""
+Quick and dirty tool to assist with generating the metadata for training
+OpenCV cascade classifiers. Go through images and drag or shift-drag to select
+areas of interest. (x to undo a selection, n and p for next/previous image). Hit
+Enter when complete. The resulting data file can be passed in to the 
+opencv_createsamples utility.
+"""
 import argparse
 import os
 import glob
@@ -9,32 +16,20 @@ parser.add_argument('-i', '--input', help='location of input images. Defaults to
 parser.add_argument('-o', '--output', help='output filename. Defaults to info.dat', default="info.dat")
 
 args = parser.parse_args()
-print args
-
-
 pattern = os.path.join(args.input, "*.jpeg")
 filepaths = sorted(glob.glob(pattern))
-#for filepath in filepaths:
-#    print filepath
-
-#cv2.EM(                   cv2.EM_START_AUTO_STEP    cv2.EVENT_FLAG_LBUTTON    cv2.EVENT_MBUTTONDBLCLK
-#cv2.EM_COV_MAT_DEFAULT    cv2.EM_START_E_STEP       cv2.EVENT_FLAG_MBUTTON    cv2.EVENT_MBUTTONDOWN
-#cv2.EM_COV_MAT_DIAGONAL   cv2.EM_START_M_STEP       cv2.EVENT_FLAG_RBUTTON    cv2.EVENT_MBUTTONUP
-#cv2.EM_COV_MAT_GENERIC    cv2.EPNP                  cv2.EVENT_FLAG_SHIFTKEY   cv2.EVENT_MOUSEMOVE
-#cv2.EM_COV_MAT_SPHERICAL  cv2.ERTrees(              cv2.EVENT_LBUTTONDBLCLK   cv2.EVENT_RBUTTONDBLCLK
-#cv2.EM_DEFAULT_MAX_ITERS  cv2.EVENT_FLAG_ALTKEY     cv2.EVENT_LBUTTONDOWN     cv2.EVENT_RBUTTONDOWN
-#cv2.EM_DEFAULT_NCLUSTERS  cv2.EVENT_FLAG_CTRLKEY    cv2.EVENT_LBUTTONUP       cv2.EVENT_RBUTTONUP
+output = {filename: [] for filename in filepaths}
 
 NONE = 0
 DRAG = 1
 C_DRAG = 2
 
 state = NONE
-image = cv2.imread(filepaths[0])
-height, width = image.shape[:2]
-
+current_image = 0
+print filepaths[current_image]
+image = cv2.imread(filepaths[current_image])
 area_buffer = numpy.zeros_like(image)
-areas = []
+areas = output[filepaths[current_image]]
 drag_start = None
 
 def on_mouse(event, x, y, keys, *other):
@@ -45,7 +40,6 @@ def on_mouse(event, x, y, keys, *other):
     global areas
     global image
     global area_buffer
-    #print event, keys
     if state == NONE and event == cv2.EVENT_LBUTTONDOWN and keys == (cv2.EVENT_FLAG_LBUTTON):
         state = DRAG
         drag_start = (x, y)
@@ -81,15 +75,40 @@ cv2.setMouseCallback("input_window", on_mouse)
 cv2.imshow("input_window", image)
 
 key = 0
-while key != 13:
+while key != 13: #enter, finished
     key = cv2.waitKey()
-    print key
     if key == 120: #x, undo
         areas = areas[:-1]
         area_buffer = numpy.zeros_like(image)
         for area in areas:
             cv2.rectangle(area_buffer, area[0], area[1], (0,100,0), 2)
         cv2.imshow("input_window", cv2.add(image, area_buffer))
+    elif key == 110: #n, next
+        current_image = (current_image+1) % len(filepaths)
+        state = NONE
+        print filepaths[current_image]
+        image = cv2.imread(filepaths[current_image])
+        area_buffer = numpy.zeros_like(image)
+        areas = output[filepaths[current_image]]
+        for area in areas:
+            cv2.rectangle(area_buffer, area[0], area[1], (0,100,0), 2)
+        drag_start = None
+        cv2.imshow("input_window", cv2.add(image, area_buffer))
+    elif key == 112: #p, previous
+        current_image = (current_image-1) % len(filepaths)
+        state = NONE
+        print filepaths[current_image]
+        image = cv2.imread(filepaths[current_image])
+        area_buffer = numpy.zeros_like(image)
+        areas = output[filepaths[current_image]]
+        for area in areas:
+            cv2.rectangle(area_buffer, area[0], area[1], (0,100,0), 2)
+        drag_start = None
+        cv2.imshow("input_window", cv2.add(image, area_buffer))
 
-print areas
+with open(args.output, "w") as output_file:
+    area_data = sorted(output.items(), key=lambda x: x[0])
+    for data in area_data:
+        areas = ["{0} {1} {2} {3}".format(area[0][0], area[0][1], area[1][0], area[1][1]) for area in data[1]]
+        output_file.write("{0}\t{1}\t{2}\n".format(data[0], len(data[1]), "\t".join(areas)))    
 
