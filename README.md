@@ -24,7 +24,10 @@ Step 3: decide whether this wisdom comprises text, an image or both. On this bra
 
 This transform reveals a lot of information. Peak blobs in a row are probably lines of text, the y component gives the most level angle, tiny peaks are probably lines, images create a mess of peaks (or no particular peaks). Then use Haar feature cascade classifier to identify those peak blobs. 
 
-    opencv_traincascade -data ./ -vec info.dat -bg bg.txt -numPos 22 -numNeg 10 -numStages 20 -minHitRate 0.900
+    python generate_positive.py -i full_hough/
+    rm stage*
+    opencv_createsamples  -info info.dat -vec positive_vector.dat -show
+    opencv_traincascade -data ./ -vec positive_vector.dat -bg bg.txt -numPos 22 -numNeg 10 -numStages 12 -minHitRate 0.900
 
     match numPos and numNeg to info.dat and bg.txt respectively
     what do all the other parameters actually do?

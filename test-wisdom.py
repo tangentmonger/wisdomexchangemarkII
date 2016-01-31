@@ -117,9 +117,51 @@ class TestWisdom(unittest.TestCase):
                         images +=1
                     else:
                         nonimages += 1
-        print "Image detection in %d out of %d wisdom" % (successes, len(filepaths))
         print "Image detection: %s out of %s" % (image_successes, images)
         print "Nonimage detection: %s out of %s" % (nonimage_successes, nonimages)
+        print "Overall score: %d out of %d wisdom" % (successes, len(filepaths))
+        self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 77) #can get this with no code at all :(
+        self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
+
+
+    def test_detect_two_lines(self):
+        """
+        Check that text and drawings can be distinguished with reasonable
+        accuracy
+        """
+        true_positives = 0
+        true_negatives = 0
+        false_negatives = 0
+        false_positives = 0
+
+        pattern = os.path.join(TEST_DATA, "*.jpeg")
+        filepaths = sorted(glob.glob(pattern))
+        
+        for filepath in filepaths:
+            wisdom = Wisdom(filepath)
+            answer = expected[wisdom.filename]
+            if answer:
+                if answer.lines == 2:
+                    if wisdom.lines == 2:
+
+                        print "%s:\tPASS" % wisdom.filename
+                        true_postives += 1
+                    else:
+                        print "%s:\tFAIL" % wisdom.filename
+                        false_negatives += 1
+                else:
+                    if wisdom.lines != 2:
+                        print "%s:\tOK" % wisdom.filename
+                        true_negatives += 1
+                    else:
+                        print "%s:\tFAIL" % wisdom.filename
+                        false_positives += 1
+                        
+        print "True positives: %s" % true_positives
+        print "True negatives: %s" % true_negatives
+        print "False positives: %s" % false_positives
+        print "False negatives: %s" % false_negatives
+        successes = true_positives + true_negatives
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 77) #can get this with no code at all :(
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
 

@@ -29,6 +29,7 @@ class Wisdom():
         self._prepared_rotated = None
         self._best_angle = None
         self._drawing = None
+        self._lines = None
 
 
     @property
@@ -184,13 +185,73 @@ class Wisdom():
             if self.blank:
                 self._drawing = False
             else:
-                hough = self._get_hough_transform(straighten=True)
-                #hough = cv2.imread("hough/%s" % self.filename)
-                #hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
-                
-                cv2.imwrite("analysis/%s" % self.filename, full_hough)
+                #hough = self._get_hough_transform(straighten=True)
+                hough = cv2.imread("full_hough/%s" % self.filename)
+                hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
+                hough = cv2.GaussianBlur(hough, (11,11), 0)
+                #el = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7,7)) 
+                #hough = cv2.erode(hough, el)
+                #hough = cv2.dilate(hough, el)
+                #
+                cv2.normalize(hough, hough, 0, 255, cv2.NORM_MINMAX)
+                #                
+                #threshold = 140 # if a pixel is above this...
+                #output_value = 255 # output white (otherwise black)
+                #_, hough = cv2.threshold(hough,
+                #                 threshold,
+                #                 output_value,
+                #                 cv2.THRESH_BINARY)
+        
+                #cv2.imwrite("analysis/%s" % self.filename, full_hough)
+                classifier = cv2.CascadeClassifier("two_lines_classifier.xml")
+                rects =  classifier.detectMultiScale(image=hough)
+                print rects
+                for rect in rects:
+                    cv2.rectangle(hough, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), 255, 1)
+                cv2.imwrite("results/%s" % self.filename, hough)
+                print len(rects)
+                self._drawing = (len(rects) == 0)
 
                 return self._drawing
+
+    @property
+    def lines(self):
+        """
+        Return number of lines in this wisdom
+        """
+        if self._lines == None:
+            if self.blank:
+                self._lines = 0
+            else:
+                #hough = self._get_hough_transform(straighten=True)
+                hough = cv2.imread("full_hough/%s" % self.filename)
+                hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
+                #hough = cv2.GaussianBlur(hough, (11,11), 0)
+                #el = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7,7)) 
+                #hough = cv2.erode(hough, el)
+                #hough = cv2.dilate(hough, el)
+                #
+                #cv2.normalize(hough, hough, 0, 255, cv2.NORM_MINMAX)
+                #                
+                #threshold = 140 # if a pixel is above this...
+                #output_value = 255 # output white (otherwise black)
+                #_, hough = cv2.threshold(hough,
+                #                 threshold,
+                #                 output_value,
+                #                 cv2.THRESH_BINARY)
+        
+                #cv2.imwrite("analysis/%s" % self.filename, full_hough)
+                classifier = cv2.CascadeClassifier("two_lines_cascade.xml")
+                rects =  classifier.detectMultiScale(image=hough)
+                print rects
+                for rect in rects:
+                    cv2.rectangle(hough, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), 255, 1)
+                cv2.imwrite("results/%s" % self.filename, hough)
+                print len(rects)
+                self._lines = (len(rects) == 0)
+
+                return self._lines
+
 
     def _get_hough_transform(self, straighten=False):
         """

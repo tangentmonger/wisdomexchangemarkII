@@ -50,8 +50,9 @@ def on_mouse(event, x, y, keys, *other):
         cv2.imshow("input_window", cv2.add(cv2.add(image, area_buffer), drag_buffer))
     elif state == DRAG and event == cv2.EVENT_LBUTTONUP:
         state = NONE
-        areas.append((drag_start, (x,y)))
-        cv2.rectangle(area_buffer, drag_start, (x,y), (0,100,0), 2)
+        if (x,y) != drag_start:
+            areas.append((drag_start, (x,y)))
+            cv2.rectangle(area_buffer, drag_start, (x,y), (0,100,0), 2)
         cv2.imshow("input_window", cv2.add(image, area_buffer))
 
     elif state == NONE and event == cv2.EVENT_LBUTTONDOWN and keys == (cv2.EVENT_FLAG_LBUTTON + cv2.EVENT_FLAG_SHIFTKEY):
@@ -66,8 +67,9 @@ def on_mouse(event, x, y, keys, *other):
     elif state == C_DRAG and event == cv2.EVENT_LBUTTONUP:
         state = NONE
         opposite = ((drag_start[0]*2)-x,(drag_start[1]*2)-y)
-        areas.append((opposite, (x,y)))
-        cv2.rectangle(area_buffer, opposite, (x,y), (0,100,0), 2)
+        if opposite != (x,y):
+            areas.append((opposite, (x,y)))
+            cv2.rectangle(area_buffer, opposite, (x,y), (0,100,0), 2)
         cv2.imshow("input_window", cv2.add(image, area_buffer))
 
 cv2.namedWindow("input_window")
@@ -109,8 +111,16 @@ while key != 13: #enter, finished
 with open(args.output, "w") as output_file:
     area_data = sorted(output.items(), key=lambda x: x[0])
     for data in area_data:
-        areas = ["{0} {1} {2} {3}".format(area[0][0], area[0][1], area[1][0], area[1][1]) for area in data[1]]
-        output_file.write("{0}\t{1}\t{2}\n".format(data[0], len(data[1]), "\t".join(areas)))    
+        areas = data[1]
+        if len(areas) > 0:
+            coords = []
+            for area in areas:
+                x1 = min(area[0][0], area[1][0])
+                y1 = min(area[0][1], area[1][1])
+                x2 = max(area[0][0], area[1][0])
+                y2 = max(area[0][1], area[1][1])
+                coords.append("{0} {1} {2} {3}".format(x1, y1, x2-x1, y2-y1))
+            output_file.write("{0}\t{1}\t{2}\n".format(data[0], len(data[1]), "\t".join(coords)))    
 
 print "Output file generated: {}".format(args.output)
 print "numPos = {}".format(sum([len(data[1]) for data in area_data]))
