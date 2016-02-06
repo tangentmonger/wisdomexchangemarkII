@@ -10,6 +10,15 @@ TEST_DATA = "sample_wisdom" # contains 100 wisdom samples
 
 class TestWisdom(unittest.TestCase):
 
+    def test_checks_input(self):
+        pattern = os.path.join(TEST_DATA, "*.jpeg")
+        filepaths = glob.glob(pattern)
+        wisdom_ok = Wisdom(filepaths[0])
+        self.assertIsNotNone(wisdom_ok)
+
+        with self.assertRaises(IOError):
+            wisdom_bad = Wisdom("no_such.file.jpeg")
+
     def test_best_angle(self):
         """
         Check that sample wisdom can be levelled reasonably accurately.
