@@ -23,6 +23,8 @@ class Wisdom():
     """
 
     def __init__(self, filepath):
+        if not os.path.isfile(filepath):
+            raise IOError("File '%s' not found." % os.path.abspath(filepath))
         self.filepath = filepath
         self._original = None
         self._prepared = None
