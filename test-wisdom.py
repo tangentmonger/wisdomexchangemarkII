@@ -85,17 +85,15 @@ class TestWisdom(unittest.TestCase):
         successes = 0
         pattern = os.path.join(TEST_DATA, "*.jpeg")
         filepaths = sorted(glob.glob(pattern))
-        for filepath in filepaths:
+        for filepath in filepaths[33:43]:
             wisdom = Wisdom(filepath)
-            #answer = expected[wisdom.filename]
-            #if answer and wisdom.drawing == answer.image:
-            #    print "%s:\tPASS" % wisdom.filename
-            #    successes += 1
-            #else:
-            #    #print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.image)
-            #    print "%s:\tFAIL\t(expected %s)" % (wisdom.filename)
-            print wisdom.filename
-            wisdom.drawing
+            #cv2.imwrite("results/%s" % wisdom.filename, wisdom.)
+            answer = expected[wisdom.filename]
+            if answer and wisdom.drawing == answer.lines:
+                print "%s:\tPASS \t%s" % (wisdom.filename, answer.lines)
+                successes += 1
+            else:
+                print "%s:\tFAIL\t(expected %s, returned %s, off by %s)" % (wisdom.filename, wisdom.drawing, answer.lines, answer.lines - wisdom.drawing)
         print "Image detection in %d out of %d wisdom" % (successes, len(filepaths))
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 77) #can get this with no code at all :(
         self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)

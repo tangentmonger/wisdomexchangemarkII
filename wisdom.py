@@ -182,24 +182,59 @@ class Wisdom():
         """
         if self._drawing == None:
             if self.blank:
-                self._drawing = False
+                self._drawing = 0
             else:
                 hough = self._get_hough_transform(straighten=True)
+                threshold = int( numpy.percentile(hough, 99.8))
+                output_value = 255 # output white (otherwise black)
+                _, hough = cv2.threshold(hough,
+                                         threshold,
+                                         output_value,
+                                         cv2.THRESH_BINARY)
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+                hough = cv2.morphologyEx(hough, cv2.MORPH_OPEN, kernel)
                 #hough = cv2.imread("hough/%s" % self.filename)
                 #hough = cv2.cvtColor(hough, cv2.COLOR_BGR2GRAY)
-                full_hough = numpy.concatenate((hough, numpy.fliplr(hough)))
-                
-                cv2.imwrite("analysis/%s" % self.filename, full_hough)
 
-                return self._drawing
+                hough = numpy.transpose(hough)
+                row_sums = sum(line for line in hough).tolist()
+                split = 0 - row_sums.index(0)
+                hough = numpy.roll(hough, split)
+
+                contours, h =  cv2.findContours(hough, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cv2.drawContours(hough, contours, -1, 127)
+                #print len(contours)
+                # Set up the detector with default parameters.
+                #detector = cv2.SimpleBlobDetector()
+                 
+                # Detect blobs.
+                #keypoints = detector.detect(hough)
+                #print keypoints
+
+                # Draw detected blobs as red circles.
+                # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
+                #im_with_keypoints = cv2.drawKeypoints(hough, keypoints, numpy.array([]), 127, cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+                   
+
+                cv2.imwrite("analysis/%s" % self.filename, hough)
+
+                self.drawing = len(contours)
+            return self._drawing
 
     def _get_hough_transform(self, straighten=False):
         """
         Return Hough transform accumulator array for the prepared image.
         Use straightened accumulator for easier analysis, or the default
         unstraightened for display.
+        #full_hough = numpy.concatenate((hough, numpy.fliplr(hough)))
+        to generate 360 degree representation
         """
         image = self.prepared
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
+        image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
+        #cv2.imshow("", image)
+        #cv2.waitKey(0)
+
         height, width = image.shape[:2]
 
         centre_x = width/2
@@ -217,7 +252,7 @@ class Wisdom():
         max_y = max(centre_y, height-centre_y)
 
         accumulator_width = math.ceil(math.sqrt((max_x**2) + (max_y**2))) * 2
-        accumulator = numpy.zeros((180, accumulator_width, 1))
+        accumulator = numpy.zeros((180, accumulator_width, 1), numpy.uint8)
 
         for theta_deg in xrange(-90, 90):
             theta_rad = math.radians(theta_deg)
@@ -230,6 +265,9 @@ class Wisdom():
                 pixel_y -= centre_y
                 rho = math.floor((pixel_x*cos_theta) + (pixel_y*sin_theta))
                 rho += accumulator_width / 2
+                #if accumulator[theta_deg - 90][rho] == 255:
+                #    print "exceeded limit"
+                #    ... didn't happen from sample data
                 accumulator[theta_deg - 90][rho] += 1
         
         cv2.normalize(accumulator, accumulator, 0, 255, cv2.NORM_MINMAX)
