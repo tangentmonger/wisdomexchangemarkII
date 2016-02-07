@@ -174,3 +174,98 @@ class Wisdom():
         image = self.prepared
         ink = sum([sum(row) / 255 for row in image])
         return ink <= MIMINUM_INK
+
+    def watershed(self):
+
+        from scipy.ndimage import label
+
+        def segment_on_dt(a, img):
+            border = cv2.dilate(img, None, iterations=5)
+            cv2.imwrite("analysis/border-%s" % self.filename, border)
+            border = border - cv2.erode(border, None)
+            cv2.imwrite("analysis/border2-%s" % self.filename, border)
+
+            dt = cv2.distanceTransform(img, 2, 3)
+            dt = ((dt - dt.min()) / (dt.max() - dt.min()) * 255).astype(numpy.uint8)
+            _, dt = cv2.threshold(dt, 30, 255, cv2.THRESH_BINARY)
+            print dt
+            print dt.max()
+            print dt.min()
+            cv2.imwrite("analysis/dt-%s" % self.filename, dt)
+            lbl, ncc = label(dt)
+            print ncc
+            lbl = lbl * (255/ncc)
+            # Completing the markers now. 
+            lbl[border == 255] = 255
+            print lbl
+            print lbl.max()
+
+            lbl = lbl.astype(numpy.int32)
+            cv2.watershed(a, lbl)
+
+            lbl[lbl == -1] = 0
+            lbl = lbl.astype(numpy.uint8)
+            return 255 - lbl
+
+
+        img = self.original
+        kernel = numpy.ones((3,3),numpy.uint8)
+        img = cv2.erode(img,kernel,iterations=5)
+        cv2.imwrite("analysis/img-start-%s" % self.filename, img)
+
+        # Pre-processing.
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        _, img_bin = cv2.threshold(img_gray, 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+        cv2.imwrite("analysis/img-bin-%s" % self.filename, img_bin)
+        img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN, numpy.ones((3, 3), dtype=int))
+        cv2.imwrite("analysis/img-bin2-%s" % self.filename, img_bin)
+
+        result = segment_on_dt(img, img_bin)
+        cv2.imwrite("analysis/result-%s" % self.filename, result)
+
+        result[result != 255] = 0
+        result = cv2.dilate(result, None)
+        img[result == 255] = (0, 0, 255)
+        cv2.imwrite("analysis/img-%s" % self.filename, img)
+
+        return
+
+        #ret, thresh = cv2.threshold(image,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        #ret, thresh = cv2.threshold(image,0,255,cv2.THRESH_BINARY)
+        thresh = image
+
+        # noise removal
+        kernel = numpy.ones((3,3),numpy.uint8)
+        #opening = cv2.morphologyEx(thresh,cv2.MORPH_OPEN,kernel, iterations = 2)
+
+        opening = image
+
+        # sure background area
+        sure_bg = cv2.dilate(opening,kernel,iterations=3)
+
+        # Finding sure foreground area
+        dist_transform = cv2.distanceTransform(opening,cv2.cv.CV_DIST_L2,5)
+        ret, sure_fg = cv2.threshold(dist_transform,0.7*dist_transform.max(),255,0)
+
+        # Finding unknown region
+        sure_fg = numpy.uint8(sure_fg)
+        unknown = cv2.subtract(sure_bg,sure_fg)
+             
+
+        cv2.imwrite("analysis/sure_bg-%s" % self.filename, sure_bg)
+        cv2.imwrite("analysis/sure-fg-%s" % self.filename, sure_fg)
+        cv2.imwrite("analysis/unknown-%s" % self.filename, unknown)
+
+        # Marker labelling
+        ret, markers = cv2.connectedComponents(sure_fg)
+
+        # Add one to all labels so that sure background is not 0, but 1
+        markers = markers+1
+
+        # Now, mark the region of unknown with zero
+        markers[unknown==255] = 0
+
+        markers = cv2.watershed(image,markers)
+        image[markers == -1] = [255,0,0]
+        cv2.imwrite("analysis/result-%s" % self.filename, image)
