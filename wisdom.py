@@ -6,6 +6,9 @@ import math
 import cv2
 import os
 import numpy
+import scipy
+import scipy.ndimage.filters as filters
+import scipy.ndimage.morphology as morphology
 
 # Tuning ================
 # Angle resolution: smallest angle used in levelling
@@ -177,7 +180,45 @@ class Wisdom():
         ink = sum([sum(row) / 255 for row in image])
         return ink <= MIMINUM_INK
 
-    @property
+
+
+    def detect_local_peaks(self, image, detect_maxima=True):
+        # http://stackoverflow.com/questions/3684484/peak-detection-in-a-2d-array/3689710#3689710
+        """
+        Takes an array and detects the troughs using the local maximum filter.
+        Returns a boolean mask of the troughs (i.e. 1 when
+        the pixel's value is the neighborhood maximum, 0 otherwise)
+        """
+        # define an connected neighborhood
+        # http://www.scipy.org/doc/api_docs/SciPy.ndimage.morphology.html#generate_binary_structure
+        neighborhood = morphology.generate_binary_structure(len(image.shape),2)
+        # apply the local minimum filter; all locations of minimum value 
+        # in their neighborhood are set to 1
+        # http://www.scipy.org/doc/api_docs/SciPy.ndimage.filters.html#minimum_filter
+        if detect_maxima:
+            local_peaks = (filters.maximum_filter(image, footprint=neighborhood)==image)
+        else:
+            local_peaks = (filters.minimum_filter(image, footprint=neighborhood)==image)
+        # local_peaks is a mask that contains the peaks we are 
+        # looking for, but also the background.
+        # In order to isolate the peaks we must remove the background from the mask.
+        # 
+        # we create the mask of the background
+        background = (image==0)
+        # 
+        # a little technicality: we must erode the background in order to 
+        # successfully subtract it from local_min, otherwise a line will 
+        # appear along the background border (artifact of the local minimum filter)
+        # http://www.scipy.org/doc/api_docs/SciPy.ndimage.morphology.html#binary_erosion
+        eroded_background = morphology.binary_erosion(
+            background, structure=neighborhood, border_value=1)
+        # 
+        # we obtain the final mask, containing only peaks, 
+        # by removing the background from the local_min mask
+        detected_minima = local_peaks - eroded_background
+        return detected_minima
+
+
     def drawing(self):
         """
         Return True if this wisdom contains an image
@@ -187,6 +228,33 @@ class Wisdom():
                 self._drawing = 0
             else:
                 hough = self._get_hough_transform(straighten=True)
+                
+                full_hough = numpy.concatenate((hough, numpy.fliplr(hough)))
+                print full_hough.shape
+
+    
+
+                minima = self.detect_local_peaks(cv2.blur(full_hough, (10,10)))
+                locations = numpy.where(minima)
+                print len(locations[0])
+
+                #minima = cv2.cvtColor(minima, cv2.COLOR_BGR2GRAY)
+                #cv2.normalize(minima, minima, 0, 255, cv2.NORM_MINMAX)
+                print minima.shape
+                print type(minima)
+                print minima.dtype
+
+                peak_points = zip(locations[0], locations[1])
+
+                for peak in peak_points:
+                    full_hough[peak[0]][peak[1]][0] = 255
+                cv2.imwrite("analysis/%s" % self.filename, full_hough)
+                return 0
+
+
+
+
+
                 threshold = int( numpy.percentile(hough, 99.8))
                 output_value = 255 # output white (otherwise black)
                 _, hough = cv2.threshold(hough,
