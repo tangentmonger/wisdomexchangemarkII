@@ -10,12 +10,24 @@ from scipy import optimize
 import numpy
 import re
 
+# Tuning ================
+# Angle resolution: smallest angle used in levelling
+ANGLE_RESOLUTION = 5
+# Levelling width: distance to stretch pixels during levelling.
+# Chosen by trial and error over sample wisdom, gets 94%
+LEVELLING_WIDTH = 85
+# Miminum ink: below this number of pixels, image is considered blank
+MIMINUM_INK = 100
+
+
 class Wisdom():
     """
     Represents one item of wisdom and its analysis.
     """
 
     def __init__(self, filepath):
+        if not os.path.isfile(filepath):
+            raise IOError("File '%s' not found." % os.path.abspath(filepath))
         self.filepath = filepath
         self._original = None
         self._prepared = None
@@ -108,25 +120,31 @@ class Wisdom():
         The angle at which this wisdom looks most level.
         """
         if self._best_angle is None:
-            ink_areas = {}
-            search_start = 0
-            search_end = 180
-            sample_distance = 30 # searches
-            best_angle = 0
+            if self.blank == True:
+                self._best_angle = 0
+            else:
+                ink_areas = {}
+                search_start = 0
+                search_end = 180
+                sample_distance = 30 # searches
+                best_angle = 0
 
-            while sample_distance > self._angle_resolution:
-                for angle in xrange(search_start, search_end, sample_distance):
-                    if angle not in ink_areas:
-                        ink_areas[angle] = self._get_area_for_levelling(angle % 180)
+                while sample_distance > ANGLE_RESOLUTION:
+                    for angle in xrange(search_start,
+                                        search_end,
+                                        sample_distance):
+                        if angle not in ink_areas:
+                            ink_area = self._get_area_for_levelling(angle % 180)
+                            ink_areas[angle] = ink_area
 
-                best_angle = min(ink_areas.items(), key=lambda x: x[1])
+                    best_angle = min(ink_areas.items(), key=lambda x: x[1])
 
-                new_search_space = (search_end - search_start) / 2
-                search_start = best_angle[0] - (new_search_space / 2)
-                search_end = best_angle[0] + (new_search_space / 2)
-                sample_distance = sample_distance / 2
+                    new_search_space = (search_end - search_start) / 2
+                    search_start = best_angle[0] - (new_search_space / 2)
+                    search_end = best_angle[0] + (new_search_space / 2)
+                    sample_distance = sample_distance / 2
 
-            self._best_angle = best_angle[0]
+                self._best_angle = best_angle[0]
         return self._best_angle
 
     def _get_area_for_levelling(self, angle):
@@ -144,7 +162,7 @@ class Wisdom():
 
         # blur letters together
         element = cv2.getStructuringElement(cv2.MORPH_RECT,
-                                            (self._levelling_width,1))
+                                            (LEVELLING_WIDTH,1))
         image = cv2.dilate(image, element)
 
         return sum([sum(row) / 255 for row in image])
@@ -157,9 +175,6 @@ class Wisdom():
         if self._prepared_rotated is None:
             self._prepared_rotated = self._rotate(self.best_angle)
         return self._prepared_rotated
-
-
-
 
     @property
     def lines(self):
@@ -386,5 +401,15 @@ class Wisdom():
             cv2.imwrite("analysis/%s" % self.filename, image)
         return self._lines
 
+    @property
+    def blank(self):
+        """
+        Return True if this wisdom is blank
+        """
+        image = self.prepared
+        ink = sum([sum(row) / 255 for row in image])
+        return ink <= MIMINUM_INK
+
 def func(x, y):
     return a * np.exp(-b * x) + c
+   

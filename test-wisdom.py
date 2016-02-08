@@ -10,28 +10,26 @@ TEST_DATA = "sample_wisdom" # contains 100 wisdom samples
 
 class TestWisdom(unittest.TestCase):
 
-    sample_wisdom = []
-
-    @classmethod
-    def setUpClass(cls):
-        """
-        Load sample wisdom.
-        """
+    def test_checks_input(self):
         pattern = os.path.join(TEST_DATA, "*.jpeg")
-        filepaths = sorted(glob.glob(pattern))
-        for filepath in filepaths:
-            cls.sample_wisdom.append(Wisdom(filepath))
-        cls.sample_wisdom.sort(key=lambda x: expected[x.filename].lines)
+        filepaths = glob.glob(pattern)
+        wisdom_ok = Wisdom(filepaths[0])
+        self.assertIsNotNone(wisdom_ok)
+
+        with self.assertRaises(IOError):
+            wisdom_bad = Wisdom("no_such.file.jpeg")
 
     def test_best_angle(self):
         """
         Check that sample wisdom can be levelled reasonably accurately.
         """
-        self.fail()
         tolerance = 5 # degrees
         texts = 0
         successes = 0
-        for wisdom in self.sample_wisdom:
+        pattern = os.path.join(TEST_DATA, "*.jpeg")
+        filepaths = sorted(glob.glob(pattern))
+        for filepath in filepaths:
+            wisdom = Wisdom(filepath)
             answer = expected[wisdom.filename]
             print "Testing %s" % wisdom.filename
 
@@ -45,10 +43,10 @@ class TestWisdom(unittest.TestCase):
             if answer.lines > 0:
                 texts += 1
                 if difference <= tolerance: 
+                    print "%s:\tPASS" % wisdom.filename
                     successes += 1
                 else:
-                    print "Failed to level wisdom %s (expected %d, actual %d, diff %d, image: %s, blank: %s" % (wisdom.filename, expected_angle, actual_angle, difference, answer.image, answer.blank)
-                    #cv2.imwrite("failures/%s" % wisdom.filename, wisdom.prepared_rotated)
+                    print "%s\tFAIL\t(expected %d, actual %d, diff %d, image: %s, blank: %s" % (filepath, expected_angle, actual_angle, difference, answer.image, answer.blank)
 
         print "Levelled %d out of %d textual wisdom" % (successes, texts)
         self.assertGreaterEqual(int(float(successes)/texts * 100), 94) # 94% success rate is the best so far
@@ -66,7 +64,10 @@ class TestWisdom(unittest.TestCase):
         for f in filelist:
             os.remove(f)
 
-        for wisdom in self.sample_wisdom:
+        pattern = os.path.join(TEST_DATA, "*.jpeg")
+        filepaths = sorted(glob.glob(pattern))
+        for filepath in filepaths:
+            wisdom = Wisdom(filepath)
             tested +=1
             answer = expected[wisdom.filename]
             #print "Testing %s" % wisdom.filename
@@ -80,11 +81,29 @@ class TestWisdom(unittest.TestCase):
                 print "%s: FAIL\t%f%%\t(expected %d, actual %d)" % (wisdom.filename, float(successes)/tested*100, answer.lines, wisdom.lines )
                 cv2.imwrite("failures/%s" % wisdom.filename, wisdom.prepared_rotated)
 
-        print "Detected lines in %d out of %d textual wisdom" % (successes, len(self.sample_wisdom))
-        print "Nearly detected lines in %d out of %d textual wisdom" % (near, len(self.sample_wisdom))
-        print "Failed: %d out of %d textual wisdom" % ((len(self.sample_wisdom) - near - successes), len(self.sample_wisdom))
+        print "Detected lines in %d out of %d wisdom" % (successes, len(filepaths))
+        print "Nearly detected lines in %d out of %d wisdom" % (near, len(filepaths))
+        print "Failed: %d out of %d wisdom" % ((len(filepaths) - near - successes), len(filepaths))
 
-        self.assertGreaterEqual(int(float(successes+near)/len(self.sample_wisdom) * 100), 94) 
+        self.assertGreaterEqual(int(float(successes+near)/len(filepaths) * 100), 94) 
+
+    def test_detect_blanks(self):
+        """
+        Check that blank wisdom is detected.
+        """
+        successes = 0
+        pattern = os.path.join(TEST_DATA, "*.jpeg")
+        filepaths = sorted(glob.glob(pattern))
+        for filepath in filepaths:
+            wisdom = Wisdom(filepath)
+            answer = expected[wisdom.filename]
+            if wisdom.blank == answer.blank:
+                print "%s:\tPASS" % wisdom.filename
+                successes += 1
+            else:
+                print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.blank)
+        print "Blank detection in %d out of %d wisdom" % (successes, len(filepaths))
+        self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
 
 
 if __name__ == '__main__':
