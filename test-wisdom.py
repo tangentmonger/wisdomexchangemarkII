@@ -8,6 +8,10 @@ from expected import expected
 
 TEST_DATA = "sample_wisdom" # contains 100 wisdom samples
 
+#optimisations
+#TODO: try otsu's binarisation instead of hardcoded thresholds
+#TODO: try hough transform to get the levelling angle
+
 class TestWisdom(unittest.TestCase):
 
     def test_checks_input(self):
@@ -18,6 +22,24 @@ class TestWisdom(unittest.TestCase):
 
         with self.assertRaises(IOError):
             wisdom_bad = Wisdom("no_such.file.jpeg")
+
+    def test_detect_blanks(self):
+        """
+        Check that blank wisdom is detected.
+        """
+        successes = 0
+        pattern = os.path.join(TEST_DATA, "*.jpeg")
+        filepaths = sorted(glob.glob(pattern))
+        for filepath in filepaths:
+            wisdom = Wisdom(filepath)
+            answer = expected[wisdom.filename]
+            if wisdom.blank == answer.blank:
+                print "%s:\tPASS" % wisdom.filename
+                successes += 1
+            else:
+                print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.blank)
+        print "Blank detection in %d out of %d wisdom" % (successes, len(filepaths))
+        self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
 
     def test_best_angle(self):
         """
@@ -51,6 +73,20 @@ class TestWisdom(unittest.TestCase):
         print "Levelled %d out of %d textual wisdom" % (successes, texts)
         self.assertGreaterEqual(int(float(successes)/texts * 100), 94) # 94% success rate is the best so far
 
+    def preload_prepared_rotated_image(self, wisdom):
+        """
+        Manage pre-generated levelled wisdom, for testing speed
+        """
+        prepared_filename = "prepared_rotated/%s" % wisdom.filename
+        if os.path.isfile(prepared_filename):
+            # load existing levelled wisdom
+            image = cv2.imread("prepared_rotated/%s" % wisdom.filename)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            wisdom.prepared_rotated = image
+        else:
+            # generate and save for next time
+            cv2.imwrite(prepared_filename, wisdom.prepared_rotated)
+
     def test_line_detection(self):
         """
         Check that line detection works with reasonable accuracy.
@@ -66,8 +102,9 @@ class TestWisdom(unittest.TestCase):
 
         pattern = os.path.join(TEST_DATA, "*.jpeg")
         filepaths = sorted(glob.glob(pattern))
-        for filepath in filepaths:
+        for filepath in filepaths[0:10]:
             wisdom = Wisdom(filepath)
+            self.preload_prepared_rotated_image(wisdom)
             tested +=1
             answer = expected[wisdom.filename]
             #print "Testing %s" % wisdom.filename
@@ -87,23 +124,6 @@ class TestWisdom(unittest.TestCase):
 
         self.assertGreaterEqual(int(float(successes+near)/len(filepaths) * 100), 94) 
 
-    def test_detect_blanks(self):
-        """
-        Check that blank wisdom is detected.
-        """
-        successes = 0
-        pattern = os.path.join(TEST_DATA, "*.jpeg")
-        filepaths = sorted(glob.glob(pattern))
-        for filepath in filepaths:
-            wisdom = Wisdom(filepath)
-            answer = expected[wisdom.filename]
-            if wisdom.blank == answer.blank:
-                print "%s:\tPASS" % wisdom.filename
-                successes += 1
-            else:
-                print "%s:\tFAIL\t(expected %s)" % (wisdom.filename, answer.blank)
-        print "Blank detection in %d out of %d wisdom" % (successes, len(filepaths))
-        self.assertGreaterEqual(int(float(successes)/len(filepaths) * 100), 100)
 
 
 if __name__ == '__main__':
